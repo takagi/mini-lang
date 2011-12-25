@@ -1,0 +1,14 @@
+;;;
+;;; ToDo:
+;;; * register to github
+;;; * read from outer environment: variables and array variables
+;;; * if expression and boolean type
+;;; * definition of functions for vector arithmetic
+;;;
+;;; Done:
+;;; * type-of-application
+;;; * function application
+;;; * packaging as library and separation of tests into aother file
+;;;
+
+
