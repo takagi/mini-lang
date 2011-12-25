@@ -27,6 +27,24 @@
 (is (mini-lang::compile-vector-literal '(1d0 1d0 1d0)) '(values 1d0 1d0 1d0))
 
 
+;;; test external environment reference
+
+(is (mini-lang::external-environment-reference-p '(scalar x)) t)
+(is (mini-lang::external-environment-reference-p '(vector x)) t)
+(is (mini-lang::external-environment-reference-p '(scalar-aref x i)) t)
+(is (mini-lang::external-environment-reference-p '(vector-aref x i)) t)
+(is (mini-lang::external-environment-reference-p '(scalar x y)) nil)
+
+(is (mini-lang::compile-external-environment-reference '(scalar x))
+    'x)
+(is (mini-lang::compile-external-environment-reference '(vector x))
+    '(mini-lang::vector-values x))
+(is (mini-lang::compile-external-environment-reference '(scalar-aref x i))
+    '(aref x i))
+(is (mini-lang::compile-external-environment-reference '(vector-aref x i))
+    '(mini-lang::vector-aref x i))
+
+
 ;;; test let expression
 
 (is (mini-lang::let-p '(let)) t)
@@ -131,14 +149,24 @@
 (is (let ((type-env (mini-lang::add-type-environment
                       'x 'scalar (mini-lang::empty-type-environment))))
       (mini-lang::type-of-exp 'x type-env)) 'scalar)
+
+(is (mini-lang::type-of-external-environment-reference '(scalar x)) 'scalar)
+(is (mini-lang::type-of-external-environment-reference '(vector x)) 'vector)
+(is (mini-lang::type-of-external-environment-reference '(scalar-aref x i))
+    'scalar)
+(is (mini-lang::type-of-external-environment-reference '(vector-aref x i))
+    'vector)
+
 (is (mini-lang::type-of-let '(let ((x scalar 1d0)) x) nil) 'scalar)
 (is (let ((type-env (mini-lang::add-type-environment
                       'y 'vector (mini-lang::empty-type-environment))))
       (mini-lang::type-of-let '(let ((x scalar 1d0)) y) type-env)) 'vector)
+
 (is (let ((type-env (mini-lang::add-type-environment
                       'x 'scalar (mini-lang::empty-type-environment))))
       (mini-lang::type-of-variable 'x type-env)) 'scalar)
 (is-error (mini-lang::type-of-variable 'x nil) simple-error)
+
 (is (mini-lang::type-of-application '(* 1d0 1d0) nil) 'scalar)
 (is (mini-lang::type-of-application '(* (1d0 1d0 1d0) 1d0) nil) 'vector)
 (is-error (mini-lang::type-of-application '(++ 1d0 1d0) nil) simple-error)

@@ -10,7 +10,9 @@
         :lol)
   (:export :my-compile
            :scalar
-           :vector))
+           :vector
+           :scalar-aref
+           :vector-aref))
 (in-package :mini-lang)
 
 
@@ -22,6 +24,8 @@
 (defun compile-exp (exp type-env)
   (cond ((scalar-literal-p exp) exp)
         ((vector-literal-p exp) (compile-vector-literal exp))
+        ((external-environment-reference-p exp)
+         (compile-external-environment-reference exp))
         ((let-p exp) (compile-let exp type-env))
         ((variable-p exp) (compile-variable exp type-env))
         ((application-p exp) (compile-application exp type-env))
@@ -44,6 +48,24 @@
 (defun compile-vector-literal (exp)
   (match exp
     ((x y z) `(values ,x ,y ,z))))
+
+
+;;; external environment reference
+
+(defun external-environment-reference-p (exp)
+  (match exp
+    (('scalar _) t)
+    (('vector _) t)
+    (('scalar-aref _ _) t)
+    (('vector-aref _ _) t)
+    (_ nil)))
+
+(defun compile-external-environment-reference (exp)
+  (match exp
+    (('scalar x) x)
+    (('vector x) `(vector-values ,x))
+    (('scalar-aref x i) `(aref ,x ,i))
+    (('vector-aref x i) `(vector-aref ,x ,i))))
 
 
 ;;; let expression
@@ -179,6 +201,8 @@
 (defun type-of-exp (exp type-env)
   (cond ((scalar-literal-p exp) 'scalar)
         ((vector-literal-p exp) 'vector)
+        ((external-environment-reference-p exp)
+         (type-of-external-environment-reference exp))
         ((let-p exp) (type-of-let exp type-env))
         ((variable-p exp) (type-of-variable exp type-env))
         ((application-p exp) (type-of-application exp type-env))
@@ -189,6 +213,13 @@
 
 (defun vector-type-p (exp type-env)
   (eq (type-of-exp exp type-env) 'vector))
+
+(defun type-of-external-environment-reference (exp)
+  (match exp
+    (('scalar _) 'scalar)
+    (('vector _) 'vector)
+    (('scalar-aref _ _) 'scalar)
+    (('vector-aref _ _) 'vector)))
 
 (defun type-of-let (exp type-env)
   (type-of-let% (let-binds exp) (let-exp exp) type-env))

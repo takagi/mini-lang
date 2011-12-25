@@ -1,10 +1,10 @@
 ;;;
 ;;; ToDo:
-;;; * read from outer environment: variables and array variables
+;;; * implementation of vector arithmetic using cl-tuples
 ;;; * if expression and boolean type
-;;; * definition of functions for vector arithmetic
 ;;;
 ;;; Done:
+;;; * reference to external environment: variables and array variables
 ;;; * register to github
 ;;; * type-of-application
 ;;; * function application
