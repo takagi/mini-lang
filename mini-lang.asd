@@ -13,6 +13,7 @@
   :author "Masayuki Takagi"
   :license "LLGPL"
   :depends-on (:cl-pattern
+               :cl-tuples
                :lol)
   :components ((:module "src"
                 :components

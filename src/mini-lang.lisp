@@ -7,13 +7,53 @@
 (defpackage mini-lang
   (:use :cl
         :cl-pattern
+        :cl-tuples
         :lol)
   (:export :my-compile
            :scalar
            :vector
            :scalar-aref
-           :vector-aref))
+           :vector-aref
+           ))
 (in-package :mini-lang)
+
+
+;;; definition of vector
+
+(def-tuple-type vector
+    :tuple-element-type double-float
+    :initial-element 0d0
+    :elements (x y z))
+
+(def-tuple-op vector-add*
+  ((veca vector (x1 y1 z1))
+   (vecb vector (x2 y2 z2)))
+  (:return vector
+           (vector-values* (+ x1 x2) (+ y1 y2) (+ z1 z2))))
+
+(def-tuple-op vector-sub*
+  ((veca vector (x1 y1 z1))
+   (vecb vector (x2 y2 z2)))
+  (:return vector
+           (vector-values* (- x1 x2) (- y1 y2) (- z1 z2))))
+
+(def-tuple-op vector-scale*
+  ((vec vector (x y z))
+   (k   double-float (k)))
+  (:return vector
+           (vector-values* (* x k) (* y k) (* z k))))
+
+(def-tuple-op vector-scale%*
+  ((k   double-float (k))
+   (vec vector (x y z)))
+  (:return vector
+           (vector-values* (* x k) (* y k) (* z k))))
+
+(def-tuple-op vector-scale-recip*
+  ((vec vector (x y z))
+   (k   double-float (k)))
+  (:return vector
+           (vector-values* (/ x k) (/ y k) (/ z k))))
 
 
 ;;; compile
@@ -47,7 +87,7 @@
 
 (defun compile-vector-literal (exp)
   (match exp
-    ((x y z) `(values ,x ,y ,z))))
+    ((x y z) `(vector-values* ,x ,y ,z))))
 
 
 ;;; external environment reference
@@ -63,9 +103,9 @@
 (defun compile-external-environment-reference (exp)
   (match exp
     (('scalar x) x)
-    (('vector x) `(vector-values ,x))
+    (('vector x) `(vector* ,x))
     (('scalar-aref x i) `(aref ,x ,i))
-    (('vector-aref x i) `(vector-aref ,x ,i))))
+    (('vector-aref x i) `(vector-aref* ,x ,i))))
 
 
 ;;; let expression
@@ -76,7 +116,7 @@
 ;;   ...)
 ;; =>
 ;; (let ((x 1d0))
-;;   (multiple-value-bind (y0 y1 y2) (values 1d0 1d0 1d0))
+;;   (multiple-value-bind (y0 y1 y2) (vector-values* 1d0 1d0 1d0))
 ;;     ...))
 ;;
 
@@ -126,8 +166,8 @@
 ;;   (let ((x 1d0))
 ;;     x)
 ;; when thpe of exp is vector:
-;;   (multiple-value-bind (x0 x1 x2) (values 1d0 1d0 1d0)
-;;     (values x0 x1 x2))
+;;   (multiple-value-bind (x0 x1 x2) (vector-values* 1d0 1d0 1d0)
+;;     (vector-values* x0 x1 x2))
 ;;
 
 (defun variable-p (exp)
@@ -137,7 +177,7 @@
   (cond ((scalar-type-p var type-env) var)
         ((vector-type-p var type-env) (multiple-value-bind (x y z)
                                           (make-symbols-for-values var)
-                                        `(values ,x ,y ,z)))))
+                                        `(vector-values* ,x ,y ,z)))))
 
 (defun make-symbols-for-values (s)
   (values (symb s 0) (symb s 1) (symb s 2)))
@@ -145,19 +185,20 @@
 
 ;;; function application
 
-(defconstant built-in-functions% '(+ (((scalar scalar) scalar +)
-                                      ((vector vector) vector vector-+))
-                                   - (((scalar scalar) scalar -)
-                                      ((vector vector) vector vector--))
-                                   * (((scalar scalar) scalar *)
-                                      ((vector scalar) vector vector-*.)
-                                      ((scalar vector) vector vector-.*))
-                                   / (((scalar scalar) scalar /)
-                                      ((vector scalar) vector vector-/.))))
+(defconstant built-in-functions
+  '(+ (((scalar scalar) scalar +)
+       ((vector vector) vector vector-add*))
+    - (((scalar scalar) scalar -)
+       ((vector vector) vector vector-sub*))
+    * (((scalar scalar) scalar *)
+       ((vector scalar) vector vector-scale*)
+       ((scalar vector) vector vector-scale%*))
+    / (((scalar scalar) scalar /)
+       ((vector scalar) vector vector-scale-recip*))))
 
 (defun application-p (exp)
   (match exp
-    ((op . _) (not (null (find op built-in-functions))))
+    ((op . _) (not (null (getf built-in-functions op))))
     (_ nil)))
 
 (defun compile-application (exp type-env)
@@ -191,9 +232,9 @@
 
 ;; e.g.
 ;; (((scalar scalar) scalar +)
-;;  ((vector vector) vector vector-+))
+;;  ((vector vector) vector vector-add*))
 (defun operation-candidates (op)
-  (getf built-in-functions% op))
+  (getf built-in-functions op))
 
 
 ;;; type
@@ -264,6 +305,10 @@
 (defun empty-type-environment ()
   '())
 
+(defmacro assert-type (type)
+  `(assert (or (eq ,type 'scalar)
+               (eq ,type 'vector))))
+
 (defun add-type-environment (var type type-env)
   (assert-type type)
   (cons (cons var type) type-env))
@@ -272,10 +317,6 @@
   (match (assoc var type-env)
     ((_ . type) type)
     (_          nil)))
-
-(defmacro assert-type (type)
-  `(assert (or (eq ,type 'scalar)
-               (eq ,type 'vector))))
 
 
 ;;; utilities

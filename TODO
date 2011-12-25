@@ -1,9 +1,9 @@
 ;;;
 ;;; ToDo:
-;;; * implementation of vector arithmetic using cl-tuples
 ;;; * if expression and boolean type
 ;;;
 ;;; Done:
+;;; * implementation of vector arithmetic using cl-tuples
 ;;; * reference to external environment: variables and array variables
 ;;; * register to github
 ;;; * type-of-application

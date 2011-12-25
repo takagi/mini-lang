@@ -16,7 +16,8 @@
 ;;; test compile-exp
 
 (is (mini-lang::compile-exp 1d0 nil) 1d0)
-(is (mini-lang::compile-exp '(1d0 1d0 1d0) nil) '(values 1d0 1d0 1d0))
+(is (mini-lang::compile-exp '(1d0 1d0 1d0) nil)
+    '(mini-lang::vector-values* 1d0 1d0 1d0))
 
 
 ;;; test literal
@@ -24,7 +25,8 @@
 (is (mini-lang::scalar-literal-p '1d0) t)
 
 (is (mini-lang::vector-literal-p '(1d0 1d0 1d0)) t)
-(is (mini-lang::compile-vector-literal '(1d0 1d0 1d0)) '(values 1d0 1d0 1d0))
+(is (mini-lang::compile-vector-literal '(1d0 1d0 1d0))
+    '(mini-lang::vector-values* 1d0 1d0 1d0))
 
 
 ;;; test external environment reference
@@ -38,11 +40,11 @@
 (is (mini-lang::compile-external-environment-reference '(scalar x))
     'x)
 (is (mini-lang::compile-external-environment-reference '(vector x))
-    '(mini-lang::vector-values x))
+    '(mini-lang::vector* x))
 (is (mini-lang::compile-external-environment-reference '(scalar-aref x i))
     '(aref x i))
 (is (mini-lang::compile-external-environment-reference '(vector-aref x i))
-    '(mini-lang::vector-aref x i))
+    '(mini-lang::vector-aref* x i))
 
 
 ;;; test let expression
@@ -59,13 +61,13 @@
     '(let ((x 1d0))
        x))
 (is (mini-lang::compile-let% '((x vector (1d0 1d0 1d0))) '1d0 nil)
-    '(multiple-value-bind (x0 x1 x2) (values 1d0 1d0 1d0)
+    '(multiple-value-bind (x0 x1 x2) (mini-lang::vector-values* 1d0 1d0 1d0)
        1d0))
 (is (let ((type-env (mini-lang::add-type-environment
                       'x 'vector (mini-lang::empty-type-environment))))
       (mini-lang::compile-let% '((x vector (1d0 1d0 1d0))) 'x type-env))
-    '(multiple-value-bind (x0 x1 x2) (values 1d0 1d0 1d0)
-       (values x0 x1 x2)))
+    '(multiple-value-bind (x0 x1 x2) (mini-lang::vector-values* 1d0 1d0 1d0)
+       (mini-lang::vector-values* x0 x1 x2)))
 (is (mini-lang::compile-let '(let ((x scalar 1d0))
                               x)
                             (mini-lang::empty-type-environment))
@@ -74,14 +76,14 @@
 (is (mini-lang::compile-let '(let ((x vector (1d0 1d0 1d0)))
                               x)
                             (mini-lang::empty-type-environment))
-    '(multiple-value-bind (x0 x1 x2) (values 1d0 1d0 1d0)
-       (values x0 x1 x2)))
+    '(multiple-value-bind (x0 x1 x2) (mini-lang::vector-values* 1d0 1d0 1d0)
+       (mini-lang::vector-values* x0 x1 x2)))
 (is (mini-lang::compile-let '(let ((y scalar 1d0))
                                (let ((x vector (1d0 1d0 1d0)))
                                  y))
                             (mini-lang::empty-type-environment))
     '(let ((y 1d0))
-       (multiple-value-bind (x0 x1 x2) (values 1d0 1d0 1d0)
+       (multiple-value-bind (x0 x1 x2) (mini-lang::vector-values* 1d0 1d0 1d0)
          y)))
 
 
@@ -92,7 +94,8 @@
                    (mini-lang::add-type-environment 'x 'scalar
                      (mini-lang::empty-type-environment)))))
   (is (mini-lang::compile-variable 'x type-env) 'x)
-  (is (mini-lang::compile-variable 'y type-env) '(values y0 y1 y2)))
+  (is (mini-lang::compile-variable 'y type-env)
+      '(mini-lang::vector-values* y0 y1 y2)))
 
 (multiple-value-bind (a b c) (mini-lang::make-symbols-for-values 'x)
   (is a 'x0)
@@ -113,12 +116,14 @@
       (mini-lang::compile-application '(+ x y) type-env))
     '(+ x y))
 (is (mini-lang::compile-application '(+ (1d0 1d0 1d0) (1d0 1d0 1d0)) nil)
-    '(mini-lang::vector-+ (values 1d0 1d0 1d0) (values 1d0 1d0 1d0)))
+    '(mini-lang::vector-add* (mini-lang::vector-values* 1d0 1d0 1d0)
+                             (mini-lang::vector-values* 1d0 1d0 1d0)))
 (is (let ((type-env (mini-lang::add-type-environment 'x 'vector
                       (mini-lang::add-type-environment 'y 'vector
                         (mini-lang::empty-type-environment)))))
       (mini-lang::compile-application '(+ x y) type-env))
-    '(mini-lang::vector-+ (values x0 x1 x2) (values y0 y1 y2)))
+    '(mini-lang::vector-add* (mini-lang::vector-values* x0 x1 x2)
+                             (mini-lang::vector-values* y0 y1 y2)))
 
 (is-error (mini-lang::compile-application '(++ 1d0 1d0) nil)
           simple-error)
@@ -126,16 +131,16 @@
           simple-error)
 
 (is (mini-lang::compile-application '(* (1d0 1d0 1d0) 1d0) nil)
-    '(mini-lang::vector-*. (values 1d0 1d0 1d0) 1d0))
+    '(mini-lang::vector-scale* (mini-lang::vector-values* 1d0 1d0 1d0) 1d0))
 (is (mini-lang::compile-application '(* 1d0 (1d0 1d0 1d0)) nil)
-    '(mini-lang::vector-.* 1d0 (values 1d0 1d0 1d0)))
+    '(mini-lang::vector-scale%* 1d0 (mini-lang::vector-values* 1d0 1d0 1d0)))
 
 (is (mini-lang::operand-types '(x y) '((x . scalar) (y . scalar)))
     '(scalar scalar))
 (is (mini-lang::infer-op '(x y)
                          (mini-lang::operation-candidates '+)
                          '((x . vector) (y . vector)))
-    'mini-lang::vector-+)
+    'mini-lang::vector-add*)
 (is (mini-lang::infer-return-type '(x y)
                                   (mini-lang::operation-candidates '+)
                                   '((x . vector) (y . vector)))
