@@ -36,6 +36,7 @@
            :vec3-aref
            :vec3-aref*
            :vec3-array-size
+           :norm                        ; built in functions
            ))
 (in-package :mini-lang)
 
@@ -117,6 +118,11 @@
   (:return vec3
            (vec3-values* (/ x k) (/ y k) (/ z k))))
 
+(def-tuple-op vec3-norm*
+  ((vec vec3 (x y z)))
+  (:return double-float
+           (sqrt (+ (* x x) (* y y) (* z z)))))
+           
 
 ;;; operation interface
 
@@ -307,7 +313,8 @@
        ((vec3 scalar) vec3 vec3-scale*)
        ((scalar vec3) vec3 vec3-scale%*))
     / (((scalar scalar) scalar /)
-       ((vec3 scalar) vec3 vec3-scale-recip*))))
+       ((vec3 scalar) vec3 vec3-scale-recip*))
+    norm (((vec3) scalar vec3-norm*))))
 
 (defun application-p (exp)
   (match exp

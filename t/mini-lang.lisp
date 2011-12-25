@@ -207,6 +207,9 @@
                                   '((x . vec3) (y . vec3)))
     'vec3)
 
+(is (mini-lang::compile-application '(norm (1d0 1d0 1d0)) nil)
+    '(mini-lang::vec3-norm* (mini-lang::vec3-values* 1d0 1d0 1d0)))
+
 
 ;;; test type
 
