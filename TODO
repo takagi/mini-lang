@@ -11,7 +11,7 @@
 ;;; * register to github
 ;;; * type-of-application
 ;;; * function application
-;;; * packaging as library and separation of tests into aother file
+;;; * packaging as library and separation of tests into another file
 ;;;
 
 
