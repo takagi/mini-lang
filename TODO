@@ -6,7 +6,7 @@
 ;;; * if expression and boolean type
 ;;;
 ;;; Done:
-;;; * automatic binarization of arithmetic operations
+;;; * automatic binarization of arithmetic operations, which enables to write forms like (+ a b c) and expands it to (+ (+ a b) c)
 ;;; * implementation of vector arithmetic using cl-tuples
 ;;; * reference to external environment: variables and array variables
 ;;; * register to github
