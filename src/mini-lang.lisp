@@ -9,16 +9,62 @@
         :cl-pattern
         :cl-tuples
         :lol)
-  (:export :my-compile
-           :scalar
+  (:export :compile-mini-lang
+           :scalar                      ; external environment references
            :vector
            :scalar-aref
            :vector-aref
+           :setf-scalar                 ; operation interfaces
+           :incf-scalar
+           :setf-vector
+           :incf-vector
+           :for-scalar-array            ; operation interfaces for arrays
+           :setf-scalar-array
+           :incf-scalar-array
+           :for-vector-array
+           :setf-vector-array
+           :incf-vector-array
+           :scalar                      ; scalar and scalar array
+           :scalar-array
+           :make-scalar-array
+           :scalar-aref
+           :scalar-array-size
+           :vector%                     ; vector and vector array
+           :make-vector
+           :vector-array
+           :make-vector-array
+           :vector-aref
+           :vector-aref*
+           :vector-array-size
+           :it                          ; for aif that appears in expanded macro
            ))
 (in-package :mini-lang)
 
 
+;;; definition of scalar
+
+(deftype scalar () 'double-float)
+(deftype scalar-array () '(simple-array double-float (*)))
+
+(defun make-scalar-array (n)
+  (make-array n :element-type 'double-float :initial-element 0d0))
+
+(defmacro scalar-aref (x i)
+  `(aref ,x ,i))
+
+(declaim (ftype (function (scalar-array) fixnum) scalar-array-size))
+(defun scalar-array-size (x)
+  (length x))
+
+
 ;;; definition of vector
+
+(deftype vector% () '(simple-array double-float (3)))
+(deftype vector-array () '(simple-array double-float (*)))
+
+(declaim (ftype (function (vector-array) fixnum) vector-array-size))
+(defun vector-array-size (x)
+  (vector-array-dimensions x))
 
 (def-tuple-type vector
     :tuple-element-type double-float
@@ -56,9 +102,60 @@
            (vector-values* (/ x k) (/ y k) (/ z k))))
 
 
+;;; operation interface
+
+(defmacro setf-scalar (place exp)
+  (let ((type (type-of-mini-lang exp)))
+    (if (eq type 'scalar)
+        `(setf ,(expand-scalar-place place) (compile-mini-lang ,exp))
+        (error (format nil "invalid type of expression: ~A" exp)))))
+
+(defmacro incf-scalar (place exp)
+  `(setf-scalar ,place (+ ,place ,exp)))
+
+(defun expand-scalar-place (place)
+  (if (variable-p place)
+      place
+      (match place
+        (('scalar-aref x i) `(scalar-aref ,x ,i))
+        (_ (error (format nil "invalid scalar place: ~A" place))))))
+
+(defmacro for-scalar-array (x i &rest body)
+  `(macrolet ((setf-scalar-array (exp)
+                `(setf-scalar (scalar-aref ,',x ,',i) ,exp))
+              (incf-scalar-array (exp)
+                `(incf-scalar (scalar-aref ,',x ,',i) ,exp)))
+     (dotimes (,i (scalar-array-size ,x))
+       ,@body)))
+
+(defmacro setf-vector (place exp)
+  (let ((type (type-of-mini-lang exp)))
+    (if (eq type 'vector)
+        `(setf ,(expand-vector-place place) (compile-mini-lang ,exp))
+        (error (format nil "invalid type of expression: ~A" exp)))))
+
+(defmacro incf-vector (place exp)
+  `(setf-vector ,place (+ ,place ,exp)))
+
+(defun expand-vector-place (place)
+  (if (variable-p place)
+      `(vector* ,place)
+      (match place
+        (('vector-aref x i) `(vector-aref* ,x ,i))
+        (_ (error (format nil "invalid vector place: ~A" place))))))
+
+(defmacro for-vector-array (x i &rest body)
+  `(macrolet ((setf-vector-array (exp)
+                `(setf-vector (vector-aref ,',x ,',i) ,exp))
+              (incf-vector-array (exp)
+                `(incf-vector (vector-aref ,',x ,',i) ,exp)))
+     (dotimes (,i (vector-array-size ,x))
+       ,@body)))
+
+
 ;;; compile
 
-(defmacro my-compile (exp)
+(defmacro compile-mini-lang (exp)
   (compile-exp (binarize exp) (empty-type-environment)))
 
 (defun compile-exp (exp type-env)
@@ -104,7 +201,7 @@
   (match exp
     (('scalar x) x)
     (('vector x) `(vector* ,x))
-    (('scalar-aref x i) `(aref ,x ,i))
+    (('scalar-aref x i) `(scalar-aref ,x ,i))
     (('vector-aref x i) `(vector-aref* ,x ,i))))
 
 
@@ -238,6 +335,9 @@
 
 
 ;;; type
+
+(defun type-of-mini-lang (exp)
+  (type-of-exp exp (empty-type-environment)))
 
 (defun type-of-exp (exp type-env)
   (cond ((scalar-literal-p exp) 'scalar)

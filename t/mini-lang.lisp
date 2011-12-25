@@ -13,6 +13,67 @@
 (plan nil)
 
 
+;;; test operation interface
+
+(is (mini-lang::expand-scalar-place 'x) 'x)
+(is (mini-lang::expand-scalar-place '(scalar-aref x i)) '(scalar-aref x i))
+
+(is (mini-lang::expand-vector-place 'x) '(mini-lang::vector* x))
+(is (mini-lang::expand-vector-place '(vector-aref x i))
+    '(mini-lang::vector-aref* x i))
+
+(is-expand (setf-scalar x 1d0) (setf x (compile-mini-lang 1d0)))
+(is-expand (setf-scalar (scalar-aref x i) 1d0)
+           (setf (scalar-aref x i) (compile-mini-lang 1d0)))
+
+(is-expand (incf-scalar x 1d0) (setf-scalar x (+ x 1d0)))
+(is-expand (incf-scalar (scalar-aref x i) 1d0)
+           (setf-scalar (scalar-aref x i) (+ (scalar-aref x i) 1d0)))
+
+(is-expand (setf-vector x (1d0 1d0 1d0))
+           (setf (mini-lang::vector* x)
+                 (compile-mini-lang (1d0 1d0 1d0))))
+(is-expand (setf-vector (vector-aref x i) (1d0 1d0 1d0))
+           (setf (mini-lang::vector-aref* x i)
+                 (compile-mini-lang (1d0 1d0 1d0))))
+
+(is-expand (incf-vector x (1d0 1d0 1d0)) (setf-vector x (+ x (1d0 1d0 1d0))))
+(is-expand (incf-vector (vector-aref x i) (1d0 1d0 1d0))
+           (setf-vector (vector-aref x i) (+ (vector-aref x i) (1d0 1d0 1d0))))
+
+(is-expand (for-scalar-array x i
+             (setf-scalar-array 1d0))
+           (macrolet ((setf-scalar-array (exp)
+                        `(setf-scalar (scalar-aref x i) ,exp))
+                      (incf-scalar-array (exp)
+                        `(incf-scalar (scalar-aref x i) ,exp)))
+             (dotimes (i (scalar-array-size x))
+               (setf-scalar-array 1d0))))
+
+(is-expand (for-vector-array x i
+             (setf-vector-array (1d0 1d0 1d0)))
+           (macrolet ((setf-vector-array (exp)
+                        `(setf-vector (vector-aref x i) ,exp))
+                      (incf-vector-array (exp)
+                        `(incf-vector (vector-aref x i) ,exp)))
+             (dotimes (i (vector-array-size x))
+               (setf-vector-array (1d0 1d0 1d0)))))
+
+(is (let ((x (make-scalar-array 1)))
+      (for-scalar-array x i
+        (setf-scalar-array 1d0)
+        (incf-scalar-array 1d0))
+      (scalar-aref x 0))
+    2d0)
+
+(is (let ((x (make-vector-array 1)))
+      (for-vector-array x i
+        (setf-vector-array (1d0 1d0 1d0))
+        (incf-vector-array (1d0 1d0 1d0)))
+      (mini-lang::vector-aref* x 0))
+    (mini-lang::vector-values* 2d0 2d0 2d0))
+
+
 ;;; test compile-exp
 
 (is (mini-lang::compile-exp 1d0 nil) 1d0)
@@ -42,7 +103,7 @@
 (is (mini-lang::compile-external-environment-reference '(vector x))
     '(mini-lang::vector* x))
 (is (mini-lang::compile-external-environment-reference '(scalar-aref x i))
-    '(aref x i))
+    '(scalar-aref x i))
 (is (mini-lang::compile-external-environment-reference '(vector-aref x i))
     '(mini-lang::vector-aref* x i))
 
