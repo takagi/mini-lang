@@ -11,34 +11,50 @@
         :lol)
   (:export :compile-mini-lang
            :scalar                      ; external environment references
-           :vector
+           :vec3
            :scalar-aref
-           :vector-aref
+           :vec3-aref
            :setf-scalar                 ; operation interfaces
            :incf-scalar
-           :setf-vector
-           :incf-vector
+           :setf-vec3
+           :incf-vec3
            :for-scalar-array            ; operation interfaces for arrays
            :setf-scalar-array
            :incf-scalar-array
-           :for-vector-array
-           :setf-vector-array
-           :incf-vector-array
+           :for-vec3-array
+           :setf-vec3-array
+           :incf-vec3-array
            :scalar                      ; scalar and scalar array
            :scalar-array
            :make-scalar-array
            :scalar-aref
            :scalar-array-size
-           :vector%                     ; vector and vector array
-           :make-vector
-           :vector-array
-           :make-vector-array
-           :vector-aref
-           :vector-aref*
-           :vector-array-size
-           :it                          ; for aif that appears in expanded macro
+           :vec3                        ; vec3 and vec3 array
+           :make-vec3
+           :vec3-array
+           :make-vec3-array
+           :vec3-aref
+           :vec3-aref*
+           :vec3-array-size
            ))
 (in-package :mini-lang)
+
+
+;;; utilities
+
+(defmacro aif (test-form then-form &optional else-form)
+  `(let ((it ,test-form))
+     (if it ,then-form ,else-form)))
+
+(defun binarize (exp)
+  (if (atom exp)
+      exp
+      (if (and (nthcdr 3 exp)
+               (member (car exp) '(+ - * /)))
+          (destructuring-bind (op a1 a2 . rest) exp
+            (binarize `(,op (,op ,a1 ,a2) ,@rest)))
+          (destructuring-bind (op . rest) exp
+            `(,op ,@(mapcar #'binarize rest))))))
 
 
 ;;; definition of scalar
@@ -57,49 +73,49 @@
   (length x))
 
 
-;;; definition of vector
+;;; definition of vec3
 
-(deftype vector% () '(simple-array double-float (3)))
-(deftype vector-array () '(simple-array double-float (*)))
+(deftype vec3 () '(simple-array double-float (3)))
+(deftype vec3-array () '(simple-array double-float (*)))
 
-(declaim (ftype (function (vector-array) fixnum) vector-array-size))
-(defun vector-array-size (x)
-  (vector-array-dimensions x))
-
-(def-tuple-type vector
+(def-tuple-type vec3
     :tuple-element-type double-float
     :initial-element 0d0
     :elements (x y z))
 
-(def-tuple-op vector-add*
-  ((veca vector (x1 y1 z1))
-   (vecb vector (x2 y2 z2)))
-  (:return vector
-           (vector-values* (+ x1 x2) (+ y1 y2) (+ z1 z2))))
+(declaim (ftype (function (vec3-array) fixnum) vec3-array-size))
+(defun vec3-array-size (x)
+  (vec3-array-dimensions x))
 
-(def-tuple-op vector-sub*
-  ((veca vector (x1 y1 z1))
-   (vecb vector (x2 y2 z2)))
-  (:return vector
-           (vector-values* (- x1 x2) (- y1 y2) (- z1 z2))))
+(def-tuple-op vec3-add*
+  ((veca vec3 (x1 y1 z1))
+   (vecb vec3 (x2 y2 z2)))
+  (:return vec3
+           (vec3-values* (+ x1 x2) (+ y1 y2) (+ z1 z2))))
 
-(def-tuple-op vector-scale*
-  ((vec vector (x y z))
+(def-tuple-op vec3-sub*
+  ((veca vec3 (x1 y1 z1))
+   (vecb vec3 (x2 y2 z2)))
+  (:return vec3
+           (vec3-values* (- x1 x2) (- y1 y2) (- z1 z2))))
+
+(def-tuple-op vec3-scale*
+  ((vec vec3 (x y z))
    (k   double-float (k)))
-  (:return vector
-           (vector-values* (* x k) (* y k) (* z k))))
+  (:return vec3
+           (vec3-values* (* x k) (* y k) (* z k))))
 
-(def-tuple-op vector-scale%*
+(def-tuple-op vec3-scale%*
   ((k   double-float (k))
-   (vec vector (x y z)))
-  (:return vector
-           (vector-values* (* x k) (* y k) (* z k))))
+   (vec vec3 (x y z)))
+  (:return vec3
+           (vec3-values* (* x k) (* y k) (* z k))))
 
-(def-tuple-op vector-scale-recip*
-  ((vec vector (x y z))
+(def-tuple-op vec3-scale-recip*
+  ((vec vec3 (x y z))
    (k   double-float (k)))
-  (:return vector
-           (vector-values* (/ x k) (/ y k) (/ z k))))
+  (:return vec3
+           (vec3-values* (/ x k) (/ y k) (/ z k))))
 
 
 ;;; operation interface
@@ -128,28 +144,28 @@
      (dotimes (,i (scalar-array-size ,x))
        ,@body)))
 
-(defmacro setf-vector (place exp)
+(defmacro setf-vec3 (place exp)
   (let ((type (type-of-mini-lang exp)))
-    (if (eq type 'vector)
-        `(setf ,(expand-vector-place place) (compile-mini-lang ,exp))
+    (if (eq type 'vec3)
+        `(setf ,(expand-vec3-place place) (compile-mini-lang ,exp))
         (error (format nil "invalid type of expression: ~A" exp)))))
 
-(defmacro incf-vector (place exp)
-  `(setf-vector ,place (+ ,place ,exp)))
+(defmacro incf-vec3 (place exp)
+  `(setf-vec3 ,place (+ ,place ,exp)))
 
-(defun expand-vector-place (place)
+(defun expand-vec3-place (place)
   (if (variable-p place)
-      `(vector* ,place)
+      `(vec3* ,place)
       (match place
-        (('vector-aref x i) `(vector-aref* ,x ,i))
-        (_ (error (format nil "invalid vector place: ~A" place))))))
+        (('vec3-aref x i) `(vec3-aref* ,x ,i))
+        (_ (error (format nil "invalid vec3 place: ~A" place))))))
 
-(defmacro for-vector-array (x i &rest body)
-  `(macrolet ((setf-vector-array (exp)
-                `(setf-vector (vector-aref ,',x ,',i) ,exp))
-              (incf-vector-array (exp)
-                `(incf-vector (vector-aref ,',x ,',i) ,exp)))
-     (dotimes (,i (vector-array-size ,x))
+(defmacro for-vec3-array (x i &rest body)
+  `(macrolet ((setf-vec3-array (exp)
+                `(setf-vec3 (vec3-aref ,',x ,',i) ,exp))
+              (incf-vec3-array (exp)
+                `(incf-vec3 (vec3-aref ,',x ,',i) ,exp)))
+     (dotimes (,i (vec3-array-size ,x))
        ,@body)))
 
 
@@ -160,7 +176,7 @@
 
 (defun compile-exp (exp type-env)
   (cond ((scalar-literal-p exp) exp)
-        ((vector-literal-p exp) (compile-vector-literal exp))
+        ((vec3-literal-p exp) (compile-vec3-literal exp))
         ((external-environment-reference-p exp)
          (compile-external-environment-reference exp))
         ((let-p exp) (compile-let exp type-env))
@@ -175,16 +191,16 @@
   (typep exp 'double-float))
 
 
-;;; vector literal
+;;; vec3 literal
 
-(defun vector-literal-p (exp)
+(defun vec3-literal-p (exp)
   (match exp
     ((x y z) (every #'scalar-literal-p (list x y z)))
     (_       nil)))
 
-(defun compile-vector-literal (exp)
+(defun compile-vec3-literal (exp)
   (match exp
-    ((x y z) `(vector-values* ,x ,y ,z))))
+    ((x y z) `(vec3-values* ,x ,y ,z))))
 
 
 ;;; external environment reference
@@ -192,17 +208,17 @@
 (defun external-environment-reference-p (exp)
   (match exp
     (('scalar _) t)
-    (('vector _) t)
+    (('vec3 _) t)
     (('scalar-aref _ _) t)
-    (('vector-aref _ _) t)
+    (('vec3-aref _ _) t)
     (_ nil)))
 
 (defun compile-external-environment-reference (exp)
   (match exp
     (('scalar x) x)
-    (('vector x) `(vector* ,x))
+    (('vec3 x) `(vec3* ,x))
     (('scalar-aref x i) `(scalar-aref ,x ,i))
-    (('vector-aref x i) `(vector-aref* ,x ,i))))
+    (('vec3-aref x i) `(vec3-aref* ,x ,i))))
 
 
 ;;; let expression
@@ -213,7 +229,7 @@
 ;;   ...)
 ;; =>
 ;; (let ((x 1d0))
-;;   (multiple-value-bind (y0 y1 y2) (vector-values* 1d0 1d0 1d0))
+;;   (multiple-value-bind (y0 y1 y2) (vec3-values* 1d0 1d0 1d0))
 ;;     ...))
 ;;
 
@@ -238,7 +254,7 @@
       (compile-exp exp type-env)
       (match (car binds)
         ((_ 'scalar _) (compile-scalar-bind binds exp type-env))
-        ((_ 'vector _) (compile-vector-bind binds exp type-env)))))
+        ((_ 'vec3 _) (compile-vec3-bind binds exp type-env)))))
 
 (defun compile-scalar-bind (binds exp type-env)
   (match binds
@@ -247,10 +263,10 @@
         `(let ((,var ,(compile-exp val type-env)))
            ,(compile-let% rest exp type-env2))))))
 
-(defun compile-vector-bind (binds exp type-env)
+(defun compile-vec3-bind (binds exp type-env)
   (match binds
-    (((var 'vector val) . rest)
-      (let ((type-env2 (add-type-environment var 'vector type-env)))
+    (((var 'vec3 val) . rest)
+      (let ((type-env2 (add-type-environment var 'vec3 type-env)))
         (multiple-value-bind (x y z) (make-symbols-for-values var)
           `(multiple-value-bind (,x ,y ,z) ,(compile-exp val type-env)
              ,(compile-let% rest exp type-env2)))))))
@@ -262,9 +278,9 @@
 ;; when type of exp is scalar:
 ;;   (let ((x 1d0))
 ;;     x)
-;; when thpe of exp is vector:
-;;   (multiple-value-bind (x0 x1 x2) (vector-values* 1d0 1d0 1d0)
-;;     (vector-values* x0 x1 x2))
+;; when thpe of exp is vec3:
+;;   (multiple-value-bind (x0 x1 x2) (vec3-values* 1d0 1d0 1d0)
+;;     (vec3-values* x0 x1 x2))
 ;;
 
 (defun variable-p (exp)
@@ -272,9 +288,9 @@
 
 (defun compile-variable (var type-env)
   (cond ((scalar-type-p var type-env) var)
-        ((vector-type-p var type-env) (multiple-value-bind (x y z)
+        ((vec3-type-p var type-env) (multiple-value-bind (x y z)
                                           (make-symbols-for-values var)
-                                        `(vector-values* ,x ,y ,z)))))
+                                        `(vec3-values* ,x ,y ,z)))))
 
 (defun make-symbols-for-values (s)
   (values (symb s 0) (symb s 1) (symb s 2)))
@@ -282,16 +298,16 @@
 
 ;;; function application
 
-(defconstant built-in-functions
+(defvar built-in-functions              ; constant
   '(+ (((scalar scalar) scalar +)
-       ((vector vector) vector vector-add*))
+       ((vec3 vec3) vec3 vec3-add*))
     - (((scalar scalar) scalar -)
-       ((vector vector) vector vector-sub*))
+       ((vec3 vec3) vec3 vec3-sub*))
     * (((scalar scalar) scalar *)
-       ((vector scalar) vector vector-scale*)
-       ((scalar vector) vector vector-scale%*))
+       ((vec3 scalar) vec3 vec3-scale*)
+       ((scalar vec3) vec3 vec3-scale%*))
     / (((scalar scalar) scalar /)
-       ((vector scalar) vector vector-scale-recip*))))
+       ((vec3 scalar) vec3 vec3-scale-recip*))))
 
 (defun application-p (exp)
   (match exp
@@ -329,7 +345,7 @@
 
 ;; e.g.
 ;; (((scalar scalar) scalar +)
-;;  ((vector vector) vector vector-add*))
+;;  ((vec3 vec3) vec3 vec3-add*))
 (defun operation-candidates (op)
   (getf built-in-functions op))
 
@@ -341,7 +357,7 @@
 
 (defun type-of-exp (exp type-env)
   (cond ((scalar-literal-p exp) 'scalar)
-        ((vector-literal-p exp) 'vector)
+        ((vec3-literal-p exp) 'vec3)
         ((external-environment-reference-p exp)
          (type-of-external-environment-reference exp))
         ((let-p exp) (type-of-let exp type-env))
@@ -352,15 +368,15 @@
 (defun scalar-type-p (exp type-env)
   (eq (type-of-exp exp type-env) 'scalar))
 
-(defun vector-type-p (exp type-env)
-  (eq (type-of-exp exp type-env) 'vector))
+(defun vec3-type-p (exp type-env)
+  (eq (type-of-exp exp type-env) 'vec3))
 
 (defun type-of-external-environment-reference (exp)
   (match exp
     (('scalar _) 'scalar)
-    (('vector _) 'vector)
+    (('vec3 _) 'vec3)
     (('scalar-aref _ _) 'scalar)
-    (('vector-aref _ _) 'vector)))
+    (('vec3-aref _ _) 'vec3)))
 
 (defun type-of-let (exp type-env)
   (type-of-let% (let-binds exp) (let-exp exp) type-env))
@@ -370,7 +386,7 @@
       (type-of-exp exp type-env)
       (match (car binds)
         ((_ 'scalar _) (type-of-scalar-bind binds exp type-env))
-        ((_ 'vector _) (type-of-vector-bind binds exp type-env)))))
+        ((_ 'vec3 _) (type-of-vec3-bind binds exp type-env)))))
 
 (defun type-of-scalar-bind (binds exp type-env)
   (match binds
@@ -378,10 +394,10 @@
       (let ((type-env2 (add-type-environment var 'scalar type-env)))
         (type-of-let% rest exp type-env2)))))
 
-(defun type-of-vector-bind (binds exp type-env)
+(defun type-of-vec3-bind (binds exp type-env)
   (match binds
-    (((var 'vector _) . rest)
-      (let ((type-env2 (add-type-environment var 'vector type-env)))
+    (((var 'vec3 _) . rest)
+      (let ((type-env2 (add-type-environment var 'vec3 type-env)))
         (type-of-let% rest exp type-env2)))))
 
 (defun type-of-variable (var type-env)
@@ -407,7 +423,7 @@
 
 (defmacro assert-type (type)
   `(assert (or (eq ,type 'scalar)
-               (eq ,type 'vector))))
+               (eq ,type 'vec3))))
 
 (defun add-type-environment (var type type-env)
   (assert-type type)
@@ -419,18 +435,3 @@
     (_          nil)))
 
 
-;;; utilities
-
-(defmacro aif (test-form then-form &optional else-form)
-  `(let ((it ,test-form))
-     (if it ,then-form ,else-form)))
-
-(defun binarize (exp)
-  (if (atom exp)
-      exp
-      (if (and (nthcdr 3 exp)
-               (member (car exp) '(+ - * /)))
-          (destructuring-bind (op a1 a2 . rest) exp
-            (binarize `(,op (,op ,a1 ,a2) ,@rest)))
-          (destructuring-bind (op . rest) exp
-            `(,op ,@(mapcar #'binarize rest))))))
