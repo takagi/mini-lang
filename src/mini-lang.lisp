@@ -59,7 +59,7 @@
 ;;; compile
 
 (defmacro my-compile (exp)
-  (compile-exp exp (empty-type-environment)))
+  (compile-exp (binarize exp) (empty-type-environment)))
 
 (defun compile-exp (exp type-env)
   (cond ((scalar-literal-p exp) exp)
@@ -324,3 +324,13 @@
 (defmacro aif (test-form then-form &optional else-form)
   `(let ((it ,test-form))
      (if it ,then-form ,else-form)))
+
+(defun binarize (exp)
+  (if (atom exp)
+      exp
+      (if (and (nthcdr 3 exp)
+               (member (car exp) '(+ - * /)))
+          (destructuring-bind (op a1 a2 . rest) exp
+            (binarize `(,op (,op ,a1 ,a2) ,@rest)))
+          (destructuring-bind (op . rest) exp
+            `(,op ,@(mapcar #'binarize rest))))))

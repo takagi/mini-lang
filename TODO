@@ -1,12 +1,12 @@
 ;;;
 ;;; ToDo:
-;;; * automatic binarization of arithmetic operations
 ;;; * add norm function, whose type is vector -> scalar
 ;;; * export scalar and vector operations defined using cl-tuples
 ;;; * combine with my vec3 library, which is made independently
 ;;; * if expression and boolean type
 ;;;
 ;;; Done:
+;;; * automatic binarization of arithmetic operations
 ;;; * implementation of vector arithmetic using cl-tuples
 ;;; * reference to external environment: variables and array variables
 ;;; * register to github

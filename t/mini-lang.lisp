@@ -189,4 +189,12 @@
 (is (mini-lang::lookup-type-environment 'x '()) nil)
 
 
+;;; test utilities
+
+(is (mini-lang::binarize '(+ 1 1 1)) '(+ (+ 1 1) 1))
+(is (mini-lang::binarize '(fn 1 1 1)) '(fn 1 1 1))
+(is (mini-lang::binarize '(fn (+ 1 1 1))) '(fn (+ (+ 1 1) 1)))
+(is (mini-lang::binarize '()) '())
+
+
 (finalize)
