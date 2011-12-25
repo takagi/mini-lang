@@ -1,5 +1,8 @@
 ;;;
 ;;; ToDo:
+;;; * automatic binalization of arithmetic operations
+;;; * export scalar and vector operations defined using cl-tuples
+;;; * combine with my vec3 library, which is made independently
 ;;; * if expression and boolean type
 ;;;
 ;;; Done:
