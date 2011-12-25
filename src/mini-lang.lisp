@@ -53,7 +53,7 @@
       (if (and (nthcdr 3 exp)
                (member (car exp) '(+ - * /)))
           (destructuring-bind (op a1 a2 . rest) exp
-            (binarize `(,op (,op ,a1 ,a2) ,@rest)))
+            (binarize `(,op (,op ,(binarize a1) ,(binarize a2)) ,@rest)))
           (destructuring-bind (op . rest) exp
             `(,op ,@(mapcar #'binarize rest))))))
 
@@ -221,7 +221,7 @@
 
 (defun compile-external-environment-reference (exp)
   (match exp
-    (('scalar x) x)
+    (('scalar x) `(the scalar ,x))
     (('vec3 x) `(vec3* ,x))
     (('scalar-aref x i) `(scalar-aref ,x ,i))
     (('vec3-aref x i) `(vec3-aref* ,x ,i))))
@@ -360,7 +360,7 @@
 ;;; type
 
 (defun type-of-mini-lang (exp)
-  (type-of-exp exp (empty-type-environment)))
+  (type-of-exp (binarize exp) (empty-type-environment)))
 
 (defun type-of-exp (exp type-env)
   (cond ((scalar-literal-p exp) 'scalar)
