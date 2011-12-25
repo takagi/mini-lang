@@ -1,6 +1,6 @@
 ;;;
 ;;; ToDo:
-;;; * automatic binalization of arithmetic operations
+;;; * automatic binarization of arithmetic operations
 ;;; * add norm function, whose type is vector -> scalar
 ;;; * export scalar and vector operations defined using cl-tuples
 ;;; * combine with my vec3 library, which is made independently
