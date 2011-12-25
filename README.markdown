@@ -1,6 +1,6 @@
 # Mini-Lang
 
-A simple embedded language on Common Lisp, intended to be used to write physical simulation programs, which can be compiled to various backend
+A simple embedded language on Common Lisp, intended to be used to write physical simulation programs, which can be compiled to various backends.
 
 ## Usage
 
