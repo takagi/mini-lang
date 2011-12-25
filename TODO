@@ -2,10 +2,10 @@
 ;;; ToDo:
 ;;; * add norm function, whose type is vector -> scalar
 ;;; * export scalar and vector operations defined using cl-tuples
-;;; * combine with my vec3 library, which is made independently
 ;;; * if expression and boolean type
 ;;;
 ;;; Done:
+;;; * add operation interfaces including scalar and vector operations
 ;;; * automatic binarization of arithmetic operations, which enables to write forms like (+ a b c) and expands it to (+ (+ a b) c)
 ;;; * implementation of vector arithmetic using cl-tuples
 ;;; * reference to external environment: variables and array variables
