@@ -1,5 +1,6 @@
 ;;;
 ;;; ToDo:
+;;; * add more tests for binarization
 ;;; * array addition example as fast as C
 ;;; * n-body example
 ;;; * if expression and boolean type

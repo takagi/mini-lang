@@ -99,7 +99,7 @@
 (is (mini-lang::external-environment-reference-p '(scalar x y)) nil)
 
 (is (mini-lang::compile-external-environment-reference '(scalar x))
-    'x)
+    '(the scalar x))
 (is (mini-lang::compile-external-environment-reference '(vec3 x))
     '(mini-lang::vec3* x))
 (is (mini-lang::compile-external-environment-reference '(scalar-aref x i))
