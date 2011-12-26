@@ -4,11 +4,11 @@
 |#
 
 (in-package :cl-user)
-(defpackage mini-lang-example
+(defpackage mini-lang-example.nbody
   (:use :cl
         :mini-lang)
   (:export :main))
-(in-package :mini-lang-example)
+(in-package :mini-lang-example.nbody)
 
 (define-vec3-array *x* *v* *a* *f*)
 (defvar dt  1d-2)
