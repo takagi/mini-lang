@@ -18,11 +18,11 @@
            :incf-scalar
            :setf-vec3
            :incf-vec3
-           :define-scalar-array         ; operation interfaces for arrays
+           :defvar-scalar-array         ; operation interfaces for arrays
            :for-scalar-array
            :setf-scalar-array
            :incf-scalar-array
-           :define-vec3-array
+           :defvar-vec3-array
            :for-vec3-array
            :setf-vec3-array
            :incf-vec3-array
@@ -129,12 +129,12 @@
 
 ;;; operation interface
 
-(defmacro define-scalar-array (&rest rest)
+(defmacro defvar-scalar-array (&rest rest)
   `(progn (declaim (type scalar-array ,@rest))
           ,@(mapcar (lambda (x)
                       `(defvar ,x)) rest)))
 
-(defmacro define-vec3-array (&rest rest)
+(defmacro defvar-vec3-array (&rest rest)
   `(progn (declaim (type vec3-array ,@rest))
           ,@(mapcar (lambda (x)
                       `(defvar ,x)) rest)))

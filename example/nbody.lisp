@@ -10,7 +10,7 @@
   (:export :main))
 (in-package :mini-lang-example.nbody)
 
-(define-vec3-array *x* *v* *a* *f*)
+(defvar-vec3-array *x* *v* *a* *f*)
 (defvar dt  1d-2)
 (defvar m   1d0)
 (defvar g   9.8d0)
