@@ -266,6 +266,11 @@
 (is (mini-lang::binarize '(fn 1 1 1)) '(fn 1 1 1))
 (is (mini-lang::binarize '(fn (+ 1 1 1))) '(fn (+ (+ 1 1) 1)))
 (is (mini-lang::binarize '()) '())
-
+(is (mini-lang::binarize '(+ (+ 1 1 1) (+ 1 1 1) 1)) '(+ (+ (+ (+ 1 1) 1)
+                                                            (+ (+ 1 1) 1))
+                                                         1))
+(is (mini-lang::binarize '(+ (+ 1 1 1) (+ 1 1 1))) '(+ (+ (+ 1 1) 1)
+                                                       (+ (+ 1 1) 1)))
+(is (mini-lang::type-of-mini-lang '(+ 1d0 1d0 1d0)) 'scalar)
 
 (finalize)

@@ -55,7 +55,8 @@
       (if (and (nthcdr 3 exp)
                (member (car exp) '(+ - * /)))
           (destructuring-bind (op a1 a2 . rest) exp
-            (binarize `(,op (,op ,(binarize a1) ,(binarize a2)) ,@rest)))
+            `(,op (,op ,(binarize a1) ,(binarize a2))
+                  ,@(mapcar #'binarize rest)))
           (destructuring-bind (op . rest) exp
             `(,op ,@(mapcar #'binarize rest))))))
 
