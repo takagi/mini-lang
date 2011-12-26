@@ -1,12 +1,13 @@
 ;;;
 ;;; ToDo:
 ;;; * add more tests for binarization
-;;; * add type declaration in operatio interfaces not to let library users declare their own type specifications
 ;;; * array addition example as fast as C
+;;; * type declaration for external environment reference in expressions for performance optimization
 ;;; * n-body example
 ;;; * if expression and boolean type
 ;;;
 ;;; Done:
+;;; * add macros to defvar scalar-array and vec3-array variables type declaimed for performance optimization
 ;;; * add norm function whose type is vec3 -> scalar
 ;;; * export scalar and vec3 operations defined by cl-tuples
 ;;; * add operation interfaces including scalar and vec3 operations

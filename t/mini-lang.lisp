@@ -15,6 +15,13 @@
 
 ;;; test operation interface
 
+(is-expand (define-scalar-array x y) (progn (declaim (type scalar-array x y))
+                                            (defvar x)
+                                            (defvar y)))
+(is-expand (define-vec3-array x y) (progn (declaim (type vec3-array x y))
+                                          (defvar x)
+                                          (defvar y)))
+
 (is (mini-lang::expand-scalar-place 'x) 'x)
 (is (mini-lang::expand-scalar-place '(scalar-aref x i)) '(scalar-aref x i))
 
