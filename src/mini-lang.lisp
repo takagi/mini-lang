@@ -91,6 +91,9 @@
 (defun vec3-array-size (x)
   (vec3-array-dimensions x))
 
+(defmacro vec3-negate* (x)
+  `(vec3-scale* ,x -1d0))
+
 (def-tuple-op vec3-add*
   ((veca vec3 (x1 y1 z1))
    (vecb vec3 (x2 y2 z2)))
@@ -109,17 +112,11 @@
   (:return vec3
            (vec3-values* (* x k) (* y k) (* z k))))
 
-(def-tuple-op vec3-scale%*
-  ((k   double-float (k))
-   (vec vec3 (x y z)))
-  (:return vec3
-           (vec3-values* (* x k) (* y k) (* z k))))
+(defmacro vec3-scale%* (k x)
+  `(vec3-scale* ,x ,k))
 
-(def-tuple-op vec3-scale-recip*
-  ((vec vec3 (x y z))
-   (k   double-float (k)))
-  (:return vec3
-           (vec3-values* (/ x k) (/ y k) (/ z k))))
+(defmacro vec3-scale-recip* (x k)
+  `(vec3-scale* ,x (/ 1d0 ,k)))
 
 (def-tuple-op vec3-norm*
   ((vec vec3 (x y z)))
@@ -320,14 +317,17 @@
 (defvar built-in-functions              ; constant
   '(+ (((scalar scalar) scalar +)
        ((vec3 vec3) vec3 vec3-add*))
-    - (((scalar scalar) scalar -)
+    - (((scalar) scalar -)
+       ((vec3) vec3 vec3-negate*)
+       ((scalar scalar) scalar -)
        ((vec3 vec3) vec3 vec3-sub*))
     * (((scalar scalar) scalar *)
        ((vec3 scalar) vec3 vec3-scale*)
        ((scalar vec3) vec3 vec3-scale%*))
     / (((scalar scalar) scalar /)
        ((vec3 scalar) vec3 vec3-scale-recip*))
-    norm (((vec3) scalar vec3-norm*))))
+    norm (((vec3) scalar vec3-norm*))
+    exp (((scalar) scalar exp))))
 
 (defun application-p (exp)
   (match exp
