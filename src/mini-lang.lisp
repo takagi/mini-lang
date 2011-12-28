@@ -26,6 +26,7 @@
            :for-vec3-array
            :setf-vec3-array
            :incf-vec3-array
+           :bool                        ; bool
            :scalar                      ; scalar and scalar array
            :scalar-array
            :make-scalar-array
@@ -191,14 +192,23 @@
   (compile-exp (binarize exp) (empty-type-environment)))
 
 (defun compile-exp (exp type-env)
-  (cond ((scalar-literal-p exp) exp)
+  (cond ((bool-literal-p exp) exp)
+        ((scalar-literal-p exp) exp)
         ((vec3-literal-p exp) (compile-vec3-literal exp))
         ((external-environment-reference-p exp)
          (compile-external-environment-reference exp))
         ((let-p exp) (compile-let exp type-env))
+        ((if-p exp) (compile-if exp type-env))
         ((variable-p exp) (compile-variable exp type-env))
         ((application-p exp) (compile-application exp type-env))
         (t (error (format nil "invalid expression: ~A" exp)))))
+
+
+;;; bool literal
+
+(defun bool-literal-p (exp)
+  (or (eq exp 't)
+      (eq exp 'nil)))
 
 
 ;;; scalar literal
@@ -286,6 +296,21 @@
         (multiple-value-bind (x y z) (make-symbols-for-values var)
           `(multiple-value-bind (,x ,y ,z) ,(compile-exp val type-env)
              ,(compile-let% rest exp type-env2)))))))
+
+
+;;; if expression
+
+(defun if-p (exp)
+  (match exp
+    (('if . _) t)
+    (_ nil)))
+
+(defun compile-if (exp type-env)
+  (match exp
+    (('if test-form then-form else-form)
+       `(if ,(compile-exp test-form type-env)
+            ,(compile-exp then-form type-env)
+            ,(compile-exp else-form type-env)))))
 
 
 ;;; variable
@@ -376,14 +401,19 @@
   (type-of-exp (binarize exp) (empty-type-environment)))
 
 (defun type-of-exp (exp type-env)
-  (cond ((scalar-literal-p exp) 'scalar)
+  (cond ((bool-literal-p exp) 'bool)
+        ((scalar-literal-p exp) 'scalar)
         ((vec3-literal-p exp) 'vec3)
         ((external-environment-reference-p exp)
          (type-of-external-environment-reference exp))
         ((let-p exp) (type-of-let exp type-env))
+        ((if-p exp) (type-of-if exp type-env))
         ((variable-p exp) (type-of-variable exp type-env))
         ((application-p exp) (type-of-application exp type-env))
         (t (error (format nil "invalid expression: ~A" exp)))))
+
+(defun bool-type-p (exp type-env)
+  (eq (type-of-exp exp type-env) 'bool))
 
 (defun scalar-type-p (exp type-env)
   (eq (type-of-exp exp type-env) 'scalar))
@@ -419,6 +449,22 @@
     (((var 'vec3 _) . rest)
       (let ((type-env2 (add-type-environment var 'vec3 type-env)))
         (type-of-let% rest exp type-env2)))))
+
+(defun type-of-if (exp type-env)
+  (match exp
+    (('if test-form then-form else-form)
+       (let ((type-of-test-form (type-of-exp test-form type-env))
+             (type-of-then-form (type-of-exp then-form type-env))
+             (type-of-else-form (type-of-exp else-form type-env)))
+         (cond ((not (eq type-of-test-form 'bool))
+                (error (format nil
+                               "type of the test form is not bool: ~A" exp)))
+               ((not (eq type-of-then-form type-of-else-form))
+                (error
+                 (format nil
+                         "type of the then and else forms are not same: ~A"
+                         exp)))
+               (t type-of-then-form))))))
 
 (defun type-of-variable (var type-env)
   (match (lookup-type-environment var type-env)

@@ -90,6 +90,9 @@
 
 ;;; test literal
 
+(is (mini-lang::bool-literal-p 't) t)
+(is (mini-lang::bool-literal-p 'nil) t)
+
 (is (mini-lang::scalar-literal-p '1d0) t)
 
 (is (mini-lang::vec3-literal-p '(1d0 1d0 1d0)) t)
@@ -153,6 +156,14 @@
     '(let ((y 1d0))
        (multiple-value-bind (x0 x1 x2) (mini-lang::vec3-values* 1d0 1d0 1d0)
          y)))
+
+
+;;; test if expression
+
+(is (mini-lang::if-p '(if t 2d0 1d0)) t)
+
+(is (mini-lang::compile-if '(if t 2d0 1d0) nil)
+    `(if t 2d0 1d0))
 
 
 ;;; test variable
@@ -228,8 +239,11 @@
 
 ;;; test type
 
+(is (mini-lang::type-of-exp 't nil) 'bool)
+(is (mini-lang::type-of-exp 'nil nil) 'bool)
 (is (mini-lang::type-of-exp '1d0 nil) 'scalar)
 (is (mini-lang::type-of-exp '(1d0 1d0 1d0) nil) 'vec3)
+
 (is (let ((type-env (mini-lang::add-type-environment
                       'x 'scalar (mini-lang::empty-type-environment))))
       (mini-lang::type-of-exp 'x type-env)) 'scalar)
@@ -250,6 +264,10 @@
                       'x 'scalar (mini-lang::empty-type-environment))))
       (mini-lang::type-of-variable 'x type-env)) 'scalar)
 (is-error (mini-lang::type-of-variable 'x nil) simple-error)
+
+(is (mini-lang::type-of-if '(if t 2d0 1d0) nil) 'scalar)
+(is-error (mini-lang::type-of-if '(if t 2d0 (1d0 1d0 1d0)) nil) simple-error)
+(is-error (mini-lang::type-of-if '(if 1d0 2d0 1d0) nil) simple-error)
 
 (is (mini-lang::type-of-application '(* 1d0 1d0) nil) 'scalar)
 (is (mini-lang::type-of-application '(* (1d0 1d0 1d0) 1d0) nil) 'vec3)
