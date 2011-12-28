@@ -233,6 +233,7 @@
 
 (defun external-environment-reference-p (exp)
   (match exp
+    (('bool _) t)
     (('scalar _) t)
     (('vec3 _) t)
     (('scalar-aref _ _) t)
@@ -241,6 +242,7 @@
 
 (defun compile-external-environment-reference (exp)
   (match exp
+    (('bool x) x)
     (('scalar x) `(the scalar ,x))
     (('vec3 x) `(vec3* ,x))
     (('scalar-aref x i) `(scalar-aref ,x ,i))
@@ -279,23 +281,28 @@
   (if (null binds)
       (compile-exp exp type-env)
       (match (car binds)
-        ((_ 'scalar _) (compile-scalar-bind binds exp type-env))
+        ((_ 'bool _) (compile-single-bind 'bool binds exp type-env))
+        ((_ 'scalar _) (compile-single-bind 'scalar binds exp type-env))
         ((_ 'vec3 _) (compile-vec3-bind binds exp type-env)))))
 
-(defun compile-scalar-bind (binds exp type-env)
+(defun compile-single-bind (type binds exp type-env)
   (match binds
-    (((var 'scalar val) . rest)
-      (let ((type-env2 (add-type-environment var 'scalar type-env)))
-        `(let ((,var ,(compile-exp val type-env)))
-           ,(compile-let% rest exp type-env2))))))
+    (((var _ val) . rest)
+      (if (eq (type-of-exp val type-env) type)
+          (let ((type-env2 (add-type-environment var type type-env)))
+            `(let ((,var ,(compile-exp val type-env)))
+               ,(compile-let% rest exp type-env2)))
+          (error (format nil "contradict type in let bind: ~A" var))))))
 
 (defun compile-vec3-bind (binds exp type-env)
   (match binds
     (((var 'vec3 val) . rest)
-      (let ((type-env2 (add-type-environment var 'vec3 type-env)))
-        (multiple-value-bind (x y z) (make-symbols-for-values var)
-          `(multiple-value-bind (,x ,y ,z) ,(compile-exp val type-env)
-             ,(compile-let% rest exp type-env2)))))))
+      (if (vec3-type-p val type-env)
+          (let ((type-env2 (add-type-environment var 'vec3 type-env)))
+            (multiple-value-bind (x y z) (make-symbols-for-values var)
+              `(multiple-value-bind (,x ,y ,z) ,(compile-exp val type-env)
+                 ,(compile-let% rest exp type-env2))))
+          (error (format nil "contradict type in let bind: ~A" var))))))
 
 
 ;;; if expression
@@ -328,7 +335,7 @@
   (symbolp exp))
 
 (defun compile-variable (var type-env)
-  (cond ((scalar-type-p var type-env) var)
+  (cond ((single-type-p var type-env) var)
         ((vec3-type-p var type-env) (multiple-value-bind (x y z)
                                           (make-symbols-for-values var)
                                         `(vec3-values* ,x ,y ,z)))))
@@ -418,11 +425,16 @@
 (defun scalar-type-p (exp type-env)
   (eq (type-of-exp exp type-env) 'scalar))
 
+(defun single-type-p (exp type-env)
+  (or (bool-type-p exp type-env)
+      (scalar-type-p exp type-env)))
+
 (defun vec3-type-p (exp type-env)
   (eq (type-of-exp exp type-env) 'vec3))
 
 (defun type-of-external-environment-reference (exp)
   (match exp
+    (('bool _) 'bool)
     (('scalar _) 'scalar)
     (('vec3 _) 'vec3)
     (('scalar-aref _ _) 'scalar)
@@ -435,20 +447,25 @@
   (if (null binds)
       (type-of-exp exp type-env)
       (match (car binds)
-        ((_ 'scalar _) (type-of-scalar-bind binds exp type-env))
+        ((_ 'bool _) (type-of-single-bind 'bool binds exp type-env))
+        ((_ 'scalar _) (type-of-single-bind 'scalar binds exp type-env))
         ((_ 'vec3 _) (type-of-vec3-bind binds exp type-env)))))
 
-(defun type-of-scalar-bind (binds exp type-env)
+(defun type-of-single-bind (type binds exp type-env)
   (match binds
-    (((var 'scalar _) . rest)
-      (let ((type-env2 (add-type-environment var 'scalar type-env)))
-        (type-of-let% rest exp type-env2)))))
+    (((var _ val) . rest)
+      (if (eq (type-of-exp val type-env) type)
+          (let ((type-env2 (add-type-environment var type type-env)))
+            (type-of-let% rest exp type-env2))
+          (error (format nil "contradict type in let bind: ~A" var))))))
 
 (defun type-of-vec3-bind (binds exp type-env)
   (match binds
-    (((var 'vec3 _) . rest)
-      (let ((type-env2 (add-type-environment var 'vec3 type-env)))
-        (type-of-let% rest exp type-env2)))))
+    (((var 'vec3 val) . rest)
+      (if (vec3-type-p val type-env)
+          (let ((type-env2 (add-type-environment var 'vec3 type-env)))
+            (type-of-let% rest exp type-env2))
+          (error (format nil "contradict type in let bind: ~A" var))))))
 
 (defun type-of-if (exp type-env)
   (match exp
@@ -488,8 +505,7 @@
   '())
 
 (defmacro assert-type (type)
-  `(assert (or (eq ,type 'scalar)
-               (eq ,type 'vec3))))
+  `(assert (member ,type '(bool scalar vec3))))
 
 (defun add-type-environment (var type type-env)
   (assert-type type)
