@@ -1,16 +1,15 @@
 ;;;
 ;;; ToDo:
-;;; * test negate function
-;;; * test exp function
-;;; * test flipped vec3 scale function and recip vec3 scale function
-;;; * add fixnum type and its operations
 ;;; * if expression and boolean type
+;;; * add fixnum type and its operations
 ;;; * with-fixnum, with-scalar and with-vec3 external environment interfaces
 ;;; * add sph example
 ;;; * array addition example as fast as C
 ;;; * type declaration for external environment reference in expressions for performance optimization
 ;;;
 ;;; Done:
+;;; * test negate function
+;;; * test exp function
 ;;; * add exp function
 ;;; * add more tests for binarization
 ;;; * add n-body example

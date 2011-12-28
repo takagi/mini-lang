@@ -217,6 +217,14 @@
 (is (mini-lang::compile-application '(norm (1d0 1d0 1d0)) nil)
     '(mini-lang::vec3-norm* (mini-lang::vec3-values* 1d0 1d0 1d0)))
 
+(is (mini-lang::compile-application '(- 1d0) nil)
+    '(- 1d0))
+(is (mini-lang::compile-application '(- (1d0 1d0 1d0)) nil)
+    `(mini-lang::vec3-negate* (mini-lang::vec3-values* 1d0 1d0 1d0)))
+
+(is (mini-lang::compile-application '(exp 1d0) nil)
+    `(exp 1d0))
+
 
 ;;; test type
 
