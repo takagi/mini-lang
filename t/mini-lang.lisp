@@ -13,7 +13,7 @@
 (plan nil)
 
 
-;;; test operation interface
+;;; test operation interfaces
 
 (is-expand (defvar-scalar-array x y) (progn (declaim (type scalar-array x y))
                                             (defvar x)
@@ -93,6 +93,8 @@
 (is (mini-lang::bool-literal-p 't) t)
 (is (mini-lang::bool-literal-p 'nil) t)
 
+(is (mini-lang::int-literal-p 1) t)
+
 (is (mini-lang::scalar-literal-p '1d0) t)
 
 (is (mini-lang::vec3-literal-p '(1d0 1d0 1d0)) t)
@@ -103,6 +105,7 @@
 ;;; test external environment reference
 
 (is (mini-lang::external-environment-reference-p '(bool x)) t)
+(is (mini-lang::external-environment-reference-p '(int x)) t)
 (is (mini-lang::external-environment-reference-p '(scalar x)) t)
 (is (mini-lang::external-environment-reference-p '(vec3 x)) t)
 (is (mini-lang::external-environment-reference-p '(scalar-aref x i)) t)
@@ -111,6 +114,8 @@
 
 (is (mini-lang::compile-external-environment-reference '(bool x))
     'x)
+(is (mini-lang::compile-external-environment-reference '(int x))
+    `(the fixnum x))
 (is (mini-lang::compile-external-environment-reference '(scalar x))
     '(the scalar x))
 (is (mini-lang::compile-external-environment-reference '(vec3 x))
@@ -129,6 +134,8 @@
 
 (is (mini-lang::compile-let% '((x bool t)) '1d0 nil)
     '(let ((x t)) 1d0))
+(is (mini-lang::compile-let% '((x int 1)) 1 nil)
+    `(let ((x 1)) 1))
 (is (mini-lang::compile-let% '((x scalar 1d0)) '1d0 nil)
     '(let ((x 1d0)) 1d0))
 (is (mini-lang::compile-let% '((x vec3 (1d0 1d0 1d0))) '1d0 nil)
@@ -136,11 +143,14 @@
        1d0))
 
 (is-error (mini-lang::compile-let% '((x bool 1d0)) 'x nil) simple-error)
+(is-error (mini-lang::compile-let% '((x int 1d0)) 'x nil) simple-error)
 (is-error (mini-lang::compile-let% '((x scalar t)) 'x nil) simple-error)
 (is-error (mini-lang::compile-let% '((x vec3 1d0)) 'x nil) simple-error)
 
 (is (mini-lang::compile-let% '((x bool t)) 'x nil)
-    `(let ((x t)) x))
+    '(let ((x t)) x))
+(is (mini-lang::compile-let% '((x int 1)) 'x nil)
+    '(let ((x 1)) x))
 (is (mini-lang::compile-let% '((x scalar 1d0)) 'x nil)
     '(let ((x 1d0)) x))
 (is (mini-lang::compile-let% '((x vec3 (1d0 1d0 1d0))) 'x nil)
@@ -148,7 +158,9 @@
        (mini-lang::vec3-values* x0 x1 x2)))
 
 (is (mini-lang::compile-let '(let ((x bool t)) x) nil)
-    `(let ((x t )) x))
+    '(let ((x t)) x))
+(is (mini-lang::compile-let '(let ((x int 1)) x) nil)
+    '(let ((x 1)) x))
 (is (mini-lang::compile-let '(let ((x scalar 1d0)) x) nil)
     '(let ((x 1d0)) x))
 (is (mini-lang::compile-let '(let ((x vec3 (1d0 1d0 1d0))) x) nil)
@@ -175,6 +187,9 @@
 (is (mini-lang::variable-p 'x) t)
 
 (let ((type-env (mini-lang::add-type-environment 'x 'bool nil)))
+  (is (mini-lang::compile-variable 'x type-env) 'x))
+
+(let ((type-env (mini-lang::add-type-environment 'x 'int nil)))
   (is (mini-lang::compile-variable 'x type-env) 'x))
 
 (let ((type-env (mini-lang::add-type-environment 'x 'scalar nil)))
@@ -242,21 +257,25 @@
     `(mini-lang::vec3-negate* (mini-lang::vec3-values* 1d0 1d0 1d0)))
 
 (is (mini-lang::compile-application '(exp 1d0) nil)
-    `(exp 1d0))
+    '(exp 1d0))
+
+(is (mini-lang::compile-application '(= 1 1) nil)
+    '(= 1 1))
 
 
 ;;; test type
 
-(is (mini-lang::type-of-exp 't nil) 'bool)
-(is (mini-lang::type-of-exp 'nil nil) 'bool)
-(is (mini-lang::type-of-exp '1d0 nil) 'scalar)
+(is (mini-lang::type-of-exp t nil) 'bool)
+(is (mini-lang::type-of-exp nil nil) 'bool)
+(is (mini-lang::type-of-exp 1 nil) 'int)
+(is (mini-lang::type-of-exp 1d0 nil) 'scalar)
 (is (mini-lang::type-of-exp '(1d0 1d0 1d0) nil) 'vec3)
 
-(is (let ((type-env (mini-lang::add-type-environment
-                      'x 'scalar (mini-lang::empty-type-environment))))
+(is (let ((type-env (mini-lang::add-type-environment 'x 'scalar nil)))
       (mini-lang::type-of-exp 'x type-env)) 'scalar)
 
 (is (mini-lang::type-of-external-environment-reference '(bool x)) 'bool)
+(is (mini-lang::type-of-external-environment-reference '(int x)) 'int)
 (is (mini-lang::type-of-external-environment-reference '(scalar x)) 'scalar)
 (is (mini-lang::type-of-external-environment-reference '(vec3 x)) 'vec3)
 (is (mini-lang::type-of-external-environment-reference '(scalar-aref x i))
@@ -265,16 +284,20 @@
     'vec3)
 
 (is (mini-lang::type-of-let '(let ((x bool t)) x) nil) 'bool)
+(is (mini-lang::type-of-let '(let ((x int 1)) x) nil) 'int)
 (is (mini-lang::type-of-let '(let ((x scalar 1d0)) x) nil) 'scalar)
 (is (let ((type-env (mini-lang::add-type-environment 'y 'vec3 nil)))
       (mini-lang::type-of-let '(let ((x scalar 1d0)) y) type-env)) 'vec3)
 
 (is-error (mini-lang::type-of-let '(let ((x bool 1d0)) x) nil) simple-error)
+(is-error (mini-lang::type-of-let '(let ((x int 1d0)) x) nil) simple-error)
 (is-error (mini-lang::type-of-let '(let ((x scalar t)) x) nil) simple-error)
 (is-error (mini-lang::type-of-let '(let ((x vec3 1d0)) x) nil) simple-error)
 
 (is (let ((type-env (mini-lang::add-type-environment 'x 'bool nil)))
       (mini-lang::type-of-variable 'x type-env)) 'bool)
+(is (let ((type-env (mini-lang::add-type-environment 'x 'int nil)))
+      (mini-lang::type-of-variable 'x type-env)) 'int)
 (is (let ((type-env (mini-lang::add-type-environment 'x 'scalar nil)))
       (mini-lang::type-of-variable 'x type-env)) 'scalar)
 (is (let ((type-env (mini-lang::add-type-environment 'x 'vec3 nil)))
@@ -285,6 +308,7 @@
 (is-error (mini-lang::type-of-if '(if t 2d0 (1d0 1d0 1d0)) nil) simple-error)
 (is-error (mini-lang::type-of-if '(if 1d0 2d0 1d0) nil) simple-error)
 
+(is (mini-lang::type-of-application '(= 1 1) nil) 'bool)
 (is (mini-lang::type-of-application '(* 1d0 1d0) nil) 'scalar)
 (is (mini-lang::type-of-application '(* (1d0 1d0 1d0) 1d0) nil) 'vec3)
 (is-error (mini-lang::type-of-application '(++ 1d0 1d0) nil) simple-error)

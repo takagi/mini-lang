@@ -10,7 +10,9 @@
         :cl-tuples
         :lol)
   (:export :compile-mini-lang
-           :scalar                      ; external environment references
+           :bool                        ; external environment references
+           :int
+           :scalar
            :vec3
            :scalar-aref
            :vec3-aref
@@ -27,6 +29,7 @@
            :setf-vec3-array
            :incf-vec3-array
            :bool                        ; bool
+           :int                         ; int
            :scalar                      ; scalar and scalar array
            :scalar-array
            :make-scalar-array
@@ -60,6 +63,15 @@
                   ,@(mapcar #'binarize rest)))
           (destructuring-bind (op . rest) exp
             `(,op ,@(mapcar #'binarize rest))))))
+
+;;; definition of bool
+
+(deftype bool () 'boolean)
+
+
+;;; definition of int
+
+(deftype int () 'fixnum)
 
 
 ;;; definition of scalar
@@ -193,6 +205,7 @@
 
 (defun compile-exp (exp type-env)
   (cond ((bool-literal-p exp) exp)
+        ((int-literal-p exp) exp)
         ((scalar-literal-p exp) exp)
         ((vec3-literal-p exp) (compile-vec3-literal exp))
         ((external-environment-reference-p exp)
@@ -209,6 +222,12 @@
 (defun bool-literal-p (exp)
   (or (eq exp 't)
       (eq exp 'nil)))
+
+
+;;; int literal
+
+(defun int-literal-p (exp)
+  (typep exp 'fixnum))
 
 
 ;;; scalar literal
@@ -234,6 +253,7 @@
 (defun external-environment-reference-p (exp)
   (match exp
     (('bool _) t)
+    (('int _) t)
     (('scalar _) t)
     (('vec3 _) t)
     (('scalar-aref _ _) t)
@@ -243,6 +263,7 @@
 (defun compile-external-environment-reference (exp)
   (match exp
     (('bool x) x)
+    (('int x) `(the fixnum ,x))
     (('scalar x) `(the scalar ,x))
     (('vec3 x) `(vec3* ,x))
     (('scalar-aref x i) `(scalar-aref ,x ,i))
@@ -282,6 +303,7 @@
       (compile-exp exp type-env)
       (match (car binds)
         ((_ 'bool _) (compile-single-bind 'bool binds exp type-env))
+        ((_ 'int _) (compile-single-bind 'int binds exp type-env))
         ((_ 'scalar _) (compile-single-bind 'scalar binds exp type-env))
         ((_ 'vec3 _) (compile-vec3-bind binds exp type-env)))))
 
@@ -347,19 +369,24 @@
 ;;; function application
 
 (defvar built-in-functions              ; constant
-  '(+ (((scalar scalar) scalar +)
+  '(+ (((int int) int +)
+       ((scalar scalar) scalar +)
        ((vec3 vec3) vec3 vec3-add*))
-    - (((scalar) scalar -)
+    - (((int) int -)
+       ((scalar) scalar -)
        ((vec3) vec3 vec3-negate*)
+       ((int int) int -)
        ((scalar scalar) scalar -)
        ((vec3 vec3) vec3 vec3-sub*))
-    * (((scalar scalar) scalar *)
+    * (((int int) int *)
+       ((scalar scalar) scalar *)
        ((vec3 scalar) vec3 vec3-scale*)
        ((scalar vec3) vec3 vec3-scale%*))
     / (((scalar scalar) scalar /)
        ((vec3 scalar) vec3 vec3-scale-recip*))
     norm (((vec3) scalar vec3-norm*))
-    exp (((scalar) scalar exp))))
+    exp (((scalar) scalar exp))
+    = (((int int) bool =))))
 
 (defun application-p (exp)
   (match exp
@@ -409,6 +436,7 @@
 
 (defun type-of-exp (exp type-env)
   (cond ((bool-literal-p exp) 'bool)
+        ((int-literal-p exp) 'int)
         ((scalar-literal-p exp) 'scalar)
         ((vec3-literal-p exp) 'vec3)
         ((external-environment-reference-p exp)
@@ -422,11 +450,15 @@
 (defun bool-type-p (exp type-env)
   (eq (type-of-exp exp type-env) 'bool))
 
+(defun int-type-p (exp type-env)
+  (eq (type-of-exp exp type-env) 'int))
+
 (defun scalar-type-p (exp type-env)
   (eq (type-of-exp exp type-env) 'scalar))
 
 (defun single-type-p (exp type-env)
   (or (bool-type-p exp type-env)
+      (int-type-p exp type-env)
       (scalar-type-p exp type-env)))
 
 (defun vec3-type-p (exp type-env)
@@ -435,6 +467,7 @@
 (defun type-of-external-environment-reference (exp)
   (match exp
     (('bool _) 'bool)
+    (('int _) 'int)
     (('scalar _) 'scalar)
     (('vec3 _) 'vec3)
     (('scalar-aref _ _) 'scalar)
@@ -448,6 +481,7 @@
       (type-of-exp exp type-env)
       (match (car binds)
         ((_ 'bool _) (type-of-single-bind 'bool binds exp type-env))
+        ((_ 'int _) (type-of-single-bind 'int binds exp type-env))
         ((_ 'scalar _) (type-of-single-bind 'scalar binds exp type-env))
         ((_ 'vec3 _) (type-of-vec3-bind binds exp type-env)))))
 
@@ -505,7 +539,7 @@
   '())
 
 (defmacro assert-type (type)
-  `(assert (member ,type '(bool scalar vec3))))
+  `(assert (member ,type '(bool int scalar vec3))))
 
 (defun add-type-environment (var type type-env)
   (assert-type type)
