@@ -11,8 +11,9 @@
 (defsystem mini-lang-example
   :author "Masayuki Takagi"
   :license "LLGPL"
-  :depends-on (:mini-lang)
+  :depends-on (:mini-lang :imago)
   :components ((:module "example"
                 :components
-                ((:file "nbody"))))
+                ((:file "nbody")
+                 (:file "diffuse"))))
   :perform (load-op :after (op c) (asdf:clear-system c)))
