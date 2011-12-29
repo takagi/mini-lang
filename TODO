@@ -1,5 +1,6 @@
 ;;;
 ;;; ToDo:
+;;; * use gensym for vec3 in let binding and variable reference
 ;;; * emahncement scalar-mesh in performance
 ;;; * add vec3-mesh and its operations
 ;;; * with-int, with-scalar and with-vec3 external environment interfaces
