@@ -18,24 +18,32 @@
 (is-expand (defvar-scalar-array x y) (progn (declaim (type scalar-array x y))
                                             (defvar x)
                                             (defvar y)))
+(is-expand (defvar-scalar-mesh x y) (progn (declaim (type scalar-mesh x y))
+                                           (defvar x)
+                                           (defvar y)))
 (is-expand (defvar-vec3-array x y) (progn (declaim (type vec3-array x y))
                                           (defvar x)
                                           (defvar y)))
 
 (is (mini-lang::expand-scalar-place 'x) 'x)
 (is (mini-lang::expand-scalar-place '(scalar-aref x i)) '(scalar-aref x i))
+(is (mini-lang::expand-scalar-place '(scalar-aref x i j)) '(scalar-aref x i j))
 
 (is (mini-lang::expand-vec3-place 'x) '(mini-lang::vec3* x))
 (is (mini-lang::expand-vec3-place '(vec3-aref x i))
-    '(mini-lang::vec3-aref* x i))
+    '(vec3-aref* x i))
 
 (is-expand (setf-scalar x 1d0) (setf x (compile-mini-lang 1d0)))
 (is-expand (setf-scalar (scalar-aref x i) 1d0)
            (setf (scalar-aref x i) (compile-mini-lang 1d0)))
+(is-expand (setf-scalar (scalar-aref x i j) 1d0)
+           (setf (scalar-aref x i j) (compile-mini-lang 1d0)))
 
 (is-expand (incf-scalar x 1d0) (setf-scalar x (+ x 1d0)))
 (is-expand (incf-scalar (scalar-aref x i) 1d0)
            (setf-scalar (scalar-aref x i) (+ (scalar-aref x i) 1d0)))
+(is-expand (incf-scalar (scalar-aref x i j) 1d0)
+           (setf-scalar (scalar-aref x i j) (+ (scalar-aref x i j) 1d0)))
 
 (is-expand (setf-vec3 x (1d0 1d0 1d0))
            (setf (mini-lang::vec3* x)
@@ -56,6 +64,15 @@
                         `(incf-scalar (scalar-aref x i) ,exp)))
              (dotimes (i (scalar-array-size x))
                (setf-scalar-array 1d0))))
+(is-expand (for-scalar-mesh x i j
+              (setf-scalar-mesh 1d0))
+           (macrolet ((setf-scalar-mesh (exp)
+                        `(setf-scalar (scalar-aref x i j) ,exp))
+                      (incf-scalar-mesh (exp)
+                        `(incf-scalar (scalar-aref x i j) ,exp)))
+             (dotimes (j (scalar-mesh-size-y x))
+               (dotimes (i (scalar-mesh-size-x x))
+                 (setf-scalar-mesh 1d0)))))
 
 (is-expand (for-vec3-array x i
              (setf-vec3-array (1d0 1d0 1d0)))
@@ -71,6 +88,12 @@
         (setf-scalar-array 1d0)
         (incf-scalar-array 1d0))
       (scalar-aref x 0))
+    2d0)
+(is (let ((x (make-scalar-mesh 1 1)))
+      (for-scalar-mesh x i j
+        (setf-scalar-mesh 1d0)
+        (incf-scalar-mesh 1d0))
+      (scalar-aref x 0 0))
     2d0)
 
 (is (let ((x (make-vec3-array 1)))
