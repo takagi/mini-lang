@@ -1,6 +1,5 @@
 ;;;
 ;;; ToDo:
-;;; * add test for scalar-mesh in external environment reference and its type
 ;;; * emahncement scalar-mesh in performance
 ;;; * add vec3-mesh and its operations
 ;;; * with-int, with-scalar and with-vec3 external environment interfaces
@@ -11,6 +10,7 @@
 ;;; * type declaration for external environment reference in expressions for performance optimization (is this needed?)
 ;;;
 ;;; Done:
+;;; * add test for scalar-mesh in external environment reference and its type
 ;;; * add scalar-mesh and its operations
 ;;; * add diffusion simulation example
 ;;; * add int type and its operations

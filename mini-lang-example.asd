@@ -15,5 +15,6 @@
   :components ((:module "example"
                 :components
                 ((:file "nbody")
-                 (:file "diffuse"))))
+                 (:file "diffuse")
+                 (:file "diffuse2"))))
   :perform (load-op :after (op c) (asdf:clear-system c)))
