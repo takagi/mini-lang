@@ -27,7 +27,8 @@
 
 (is (mini-lang::expand-scalar-place 'x) 'x)
 (is (mini-lang::expand-scalar-place '(scalar-aref x i)) '(scalar-aref x i))
-(is (mini-lang::expand-scalar-place '(scalar-aref x i j)) '(scalar-aref x i j))
+(is (mini-lang::expand-scalar-place '(scalar-mesh-aref x i j))
+    '(scalar-mesh-aref x i j))
 
 (is (mini-lang::expand-vec3-place 'x) '(mini-lang::vec3* x))
 (is (mini-lang::expand-vec3-place '(vec3-aref x i))
@@ -36,14 +37,15 @@
 (is-expand (setf-scalar x 1d0) (setf x (compile-mini-lang 1d0)))
 (is-expand (setf-scalar (scalar-aref x i) 1d0)
            (setf (scalar-aref x i) (compile-mini-lang 1d0)))
-(is-expand (setf-scalar (scalar-aref x i j) 1d0)
-           (setf (scalar-aref x i j) (compile-mini-lang 1d0)))
+(is-expand (setf-scalar (scalar-mesh-aref x i j) 1d0)
+           (setf (scalar-mesh-aref x i j) (compile-mini-lang 1d0)))
 
 (is-expand (incf-scalar x 1d0) (setf-scalar x (+ x 1d0)))
 (is-expand (incf-scalar (scalar-aref x i) 1d0)
            (setf-scalar (scalar-aref x i) (+ (scalar-aref x i) 1d0)))
-(is-expand (incf-scalar (scalar-aref x i j) 1d0)
-           (setf-scalar (scalar-aref x i j) (+ (scalar-aref x i j) 1d0)))
+(is-expand (incf-scalar (scalar-mesh-aref x i j) 1d0)
+           (setf-scalar (scalar-mesh-aref x i j)
+                        (+ (scalar-mesh-aref x i j) 1d0)))
 
 (is-expand (setf-vec3 x (1d0 1d0 1d0))
            (setf (mini-lang::vec3* x)
@@ -67,9 +69,9 @@
 (is-expand (for-scalar-mesh x i j
               (setf-scalar-mesh 1d0))
            (macrolet ((setf-scalar-mesh (exp)
-                        `(setf-scalar (scalar-aref x i j) ,exp))
+                        `(setf-scalar (scalar-mesh-aref x i j) ,exp))
                       (incf-scalar-mesh (exp)
-                        `(incf-scalar (scalar-aref x i j) ,exp)))
+                        `(incf-scalar (scalar-mesh-aref x i j) ,exp)))
              (dotimes (j (scalar-mesh-size-y x))
                (dotimes (i (scalar-mesh-size-x x))
                  (setf-scalar-mesh 1d0)))))
@@ -93,7 +95,7 @@
       (for-scalar-mesh x i j
         (setf-scalar-mesh 1d0)
         (incf-scalar-mesh 1d0))
-      (scalar-aref x 0 0))
+      (scalar-mesh-aref x 0 0))
     2d0)
 
 (is (let ((x (make-vec3-array 1)))
@@ -132,7 +134,7 @@
 (is (mini-lang::external-environment-reference-p '(scalar x)) t)
 (is (mini-lang::external-environment-reference-p '(vec3 x)) t)
 (is (mini-lang::external-environment-reference-p '(scalar-aref x i)) t)
-(is (mini-lang::external-environment-reference-p '(scalar-aref x i j)) t)
+(is (mini-lang::external-environment-reference-p '(scalar-mesh-aref x i j)) t)
 (is (mini-lang::external-environment-reference-p '(vec3-aref x i)) t)
 (is (mini-lang::external-environment-reference-p '(scalar x y)) nil)
 
@@ -146,8 +148,9 @@
     '(mini-lang::vec3* x))
 (is (mini-lang::compile-external-environment-reference '(scalar-aref x i))
     '(scalar-aref x i))
-(is (mini-lang::compile-external-environment-reference '(scalar-aref x i j))
-    '(scalar-aref x i j))
+(is (mini-lang::compile-external-environment-reference
+      '(scalar-mesh-aref x i j))
+    '(scalar-mesh-aref x i j))
 (is (mini-lang::compile-external-environment-reference '(vec3-aref x i))
     '(mini-lang::vec3-aref* x i))
 
@@ -306,7 +309,8 @@
 (is (mini-lang::type-of-external-environment-reference '(vec3 x)) 'vec3)
 (is (mini-lang::type-of-external-environment-reference '(scalar-aref x i))
     'scalar)
-(is (mini-lang::type-of-external-environment-reference '(scalar-aref x i j))
+(is (mini-lang::type-of-external-environment-reference
+      '(scalar-mesh-aref x i j))
     'scalar)
 (is (mini-lang::type-of-external-environment-reference '(vec3-aref x i))
     'vec3)
