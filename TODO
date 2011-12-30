@@ -1,6 +1,5 @@
 ;;;
 ;;; ToDo:
-;;; * test for for-scalar-mesh and for-scalar-mesh-fast
 ;;; * in for-scalar-mesh, get scalar-mesh external environment references automatically instead of passing them as an argument of for-scalar-mesh
 ;;; * use gensym for vec3 in let binding and variable reference
 ;;; * add vec3-mesh and its operations
@@ -12,6 +11,7 @@
 ;;; * type declaration for external environment reference in expressions for performance optimization (is this needed?)
 ;;;
 ;;; Done:
+;;; * fix tests for scalar-mesh
 ;;; * enahncement of scalar-mesh in performance
 ;;; * add test for scalar-mesh in external environment reference and its type
 ;;; * add scalar-mesh and its operations
