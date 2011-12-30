@@ -20,10 +20,10 @@
   
 (defun initialize (dx dy)
   (let ((alpha 30d0))
-    (for-scalar-mesh *f* jx jy
+    (for-scalar-mesh *f* jx jy (*f*)
       (let ((x (- (* dx (+ (float jx 1d0) 0.5d0)) 0.5d0))
             (y (- (* dy (+ (float jy 1d0) 0.5d0)) 0.5d0)))
-        (setf-scalar (scalar-aref *f* jx jy)
+        (setf-scalar (scalar-mesh-aref *f* jx jy)
                      (exp (* (- (scalar alpha))
                              (+ (* (scalar x) (scalar x))
                                 (* (scalar y) (scalar y))))))))))
@@ -35,27 +35,27 @@
   (let* ((c0 (* kappa (/ dt (* dx dx))))
          (c1 (* kappa (/ dt (* dy dy))))
          (c2 (- 1d0 (* 2d0 (+ c0 c1)))))
-    (for-scalar-mesh *f* jx jy
-      (setf-scalar (scalar-aref *fn* jx jy)
-                   (let ((fcc scalar (scalar-aref *f* jx jy))
+    (for-scalar-mesh *f* jx jy (*f* *fn*)
+      (setf-scalar (scalar-mesh-aref *fn* jx jy)
+                   (let ((fcc scalar (scalar-mesh-aref *f* jx jy))
                          (fcw scalar (if (= (int jx) 0)
                                          fcc
-                                         (scalar-aref *f* (- jx 1) jy)))
+                                         (scalar-mesh-aref *f* (- jx 1) jy)))
                          (fce scalar (if (= (int jx) (- (int nx) 1))
                                          fcc
-                                         (scalar-aref *f* (+ jx 1) jy)))
+                                         (scalar-mesh-aref *f* (+ jx 1) jy)))
                          (fcs scalar (if (= (int jy) 0)
                                          fcc
-                                         (scalar-aref *f* jx (- jy 1))))
+                                         (scalar-mesh-aref *f* jx (- jy 1))))
                          (fcn scalar (if (= (int jy) (- (int ny) 1))
                                          fcc
-                                         (scalar-aref *f* jx (+ jy 1)))))
+                                         (scalar-mesh-aref *f* jx (+ jy 1)))))
                      (+ (* (scalar c0) (+ fce fcw))
                         (* (scalar c1) (+ fcn fcs))
                         (* (scalar c2) fcc)))))))
 
 (defun image-value (i j fmax fmin)
-  (let ((fc (scalar-aref *f* i j)))
+  (let ((fc (scalar-mesh-aref *f* i j)))
     (truncate (* 256.0
                  (/ (- fc fmin) (- fmax fmin))))))
 
