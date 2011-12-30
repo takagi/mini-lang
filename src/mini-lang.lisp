@@ -15,7 +15,6 @@
            :scalar
            :vec3
            :scalar-aref
-           :scalar-mesh-aref
            :vec3-aref
            :setf-scalar                 ; operation interfaces
            :incf-scalar
@@ -25,11 +24,6 @@
            :for-scalar-array
            :setf-scalar-array
            :incf-scalar-array
-           :defvar-scalar-mesh
-           :for-scalar-mesh
-           :for-scalar-mesh-fast
-           :setf-scalar-mesh
-           :incf-scalar-mesh
            :defvar-vec3-array
            :for-vec3-array
            :setf-vec3-array
@@ -41,11 +35,6 @@
            :make-scalar-array
            :scalar-aref
            :scalar-array-size
-           :scalar-mesh
-           :make-scalar-mesh
-           :scalar-mesh-aref
-           :scalar-mesh-size-x
-           :scalar-mesh-size-y
            :vec3                        ; vec3 and vec3 array
            :make-vec3
            :vec3-array
@@ -99,29 +88,6 @@
 (declaim (ftype (function (scalar-array) fixnum) scalar-array-size))
 (defun scalar-array-size (x)
   (length x))
-
-(defstruct (scalar-mesh (:constructor make-scalar-mesh% (size-x size-y)))
-  (size-x 0 :type fixnum)
-  (size-y 0 :type fixnum)
-  (data (make-scalar-array 0) :type scalar-array))
-
-(defun make-scalar-mesh (nx ny)
-  (let ((mesh (make-scalar-mesh% nx ny)))
-    (setf (scalar-mesh-data mesh)
-          (make-scalar-array (* nx ny)))
-    mesh))
-
-(defmacro scalar-mesh-aref (x i j)
-  `(aref (scalar-mesh-data ,x) (scalar-mesh-index ,x ,i ,j)))
-
-(declaim (inline scalar-mesh-index))
-(defun scalar-mesh-index (x i j)
-  (let ((nx (scalar-mesh-size-x x)))
-    (scalar-mesh-index% nx i j)))
-
-(declaim (inline scalar-mesh-index%))
-(defun scalar-mesh-index% (nx i j)
-  (the fixnum (+ (the fixnum (* nx j)) i)))
 
 
 ;;; definition of vec3
@@ -178,11 +144,6 @@
           ,@(mapcar (lambda (x)
                       `(defvar ,x)) rest)))
 
-(defmacro defvar-scalar-mesh (&rest rest)
-  `(progn (declaim (type scalar-mesh ,@rest))
-          ,@(mapcar (lambda (x)
-                      `(defvar ,x)) rest)))
-
 (defmacro defvar-vec3-array (&rest rest)
   `(progn (declaim (type vec3-array ,@rest))
           ,@(mapcar (lambda (x)
@@ -202,7 +163,6 @@
       place
       (match place
         (('scalar-aref x i) `(scalar-aref ,x ,i))
-        (('scalar-mesh-aref x i j) `(scalar-mesh-aref ,x ,i ,j))
         (_ (error (format nil "invalid scalar place: ~A" place))))))
 
 (defmacro for-scalar-array (x i &rest body)
@@ -212,72 +172,6 @@
                 `(incf-scalar (scalar-aref ,',x ,',i) ,exp)))
      (dotimes (,i (scalar-array-size ,x))
        ,@body)))
-
-(defmacro for-scalar-mesh (x i j &rest body)
-  `(macrolet ((setf-scalar-mesh (exp)
-                `(setf-scalar (scalar-mesh-aref ,',x ,',i ,',j) ,exp))
-              (incf-scalar-mesh (exp)
-                `(incf-scalar (scalar-mesh-aref ,',x ,',i ,',j) ,exp)))
-     (dotimes (,j (scalar-mesh-size-y ,x))
-       (dotimes (,i (scalar-mesh-size-x ,x))
-         ,@body))))
-
-(defmacro for-scalar-mesh-fast (x i j meshes &rest body)
-  (let ((tbl (make-raw-mesh-symbol-table meshes)))
-    (for-scalar-mesh% tbl tbl x i j body)))
-
-(defun for-scalar-mesh-fast% (tbl orig-tbl x i j body)
-  (if (null tbl)
-      (for-scalar-mesh-body orig-tbl x i j body)
-      (match (car tbl)
-        ((mesh :data data :size-x size-x :size-y size-y)
-         `(let ((,data (scalar-mesh-data ,mesh))
-                (,size-x (scalar-mesh-size-x ,mesh))
-                (,size-y (scalar-mesh-size-y ,mesh)))
-            ,(for-scalar-mesh-fast% (cdr tbl) orig-tbl x i j body))))))
-
-
-;;
-;; (scalar-mesh-aref (x i j))
-;;   (case x
-;;     (*f* `(scalar-aref #:G1 (+ (* #:G2 ,j) ,i)))
-;;     (*fn* `(scalar-aref #:G4 (+ (* #:G5 ,j) ,i)))
-;;
-(defun for-scalar-mesh-body (tbl x i j body)
-  (labels ((expand-mesh-aref (x)
-             (let* ((symbol (car x))
-                    (data (raw-mesh-symbol tbl symbol :data))
-                    (size-x (raw-mesh-symbol tbl symbol :size-x)))
-               `(,symbol `(scalar-aref ,',data
-                                       (scalar-mesh-index% ,',size-x ,i ,j))))))
-    `(macrolet ((scalar-mesh-aref (x i j)
-                  (case x
-                    ,@(mapcar #'expand-mesh-aref tbl)))
-                (setf-scalar-mesh (exp)
-                  `(setf-scalar (scalar-mesh-aref ,',x ,',i ,',j) ,exp))
-                (incf-scalar-mesh (exp)
-                  `(incf-scalar (scalar-mesh-aref ,',x ,',i ,',j) ,exp)))
-       (dotimes (,j ,(raw-mesh-symbol tbl x :size-y))
-         (dotimes (,i ,(raw-mesh-symbol tbl x :size-x))
-           ,@body)))))
-
-;;
-;; ((x . (:data x-data :size-x x-size-x :size-y x-size-y))
-;;  (y . (:data y-data :size-x y-size-x :size-y y-size-y))
-;;  ...)
-;;
-(defun make-raw-mesh-symbol-table (symbols)
-  (mapcar (lambda (symbol)
-            (cons symbol (make-raw-mesh-symbols)))
-          symbols))
-
-(defun make-raw-mesh-symbols ()
-  (list :data (gensym) :size-x (gensym) :size-y (gensym)))
-
-(defun raw-mesh-symbol (tbl symbol key)
-  (aif (getf (cdr (assoc symbol tbl)) key)
-       it
-       (error (format nil "symbol not found: ~A" symbol))))
 
 (defmacro setf-vec3 (place exp)
   (let ((type (type-of-mini-lang exp)))
@@ -363,7 +257,6 @@
     (('scalar _) t)
     (('vec3 _) t)
     (('scalar-aref _ _) t)
-    (('scalar-mesh-aref _ _ _) t)
     (('vec3-aref _ _) t)
     (_ nil)))
 
@@ -374,7 +267,6 @@
     (('scalar x) `(the scalar ,x))
     (('vec3 x) `(vec3* ,x))
     (('scalar-aref x i) `(scalar-aref ,x ,i))
-    (('scalar-mesh-aref x i j) `(scalar-mesh-aref ,x ,i ,j))
     (('vec3-aref x i) `(vec3-aref* ,x ,i))))
 
 
@@ -579,7 +471,6 @@
     (('scalar _) 'scalar)
     (('vec3 _) 'vec3)
     (('scalar-aref _ _) 'scalar)
-    (('scalar-mesh-aref _ _ _) 'scalar)
     (('vec3-aref _ _) 'vec3)))
 
 (defun type-of-let (exp type-env)
