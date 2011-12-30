@@ -20,7 +20,7 @@
   
 (defun initialize (dx dy)
   (let ((alpha 30d0))
-    (for-scalar-mesh *f* jx jy (*f*)
+    (for-scalar-mesh *f* jx jy
       (let ((x (- (* dx (+ (float jx 1d0) 0.5d0)) 0.5d0))
             (y (- (* dy (+ (float jy 1d0) 0.5d0)) 0.5d0)))
         (setf-scalar (scalar-mesh-aref *f* jx jy)
@@ -35,7 +35,7 @@
   (let* ((c0 (* kappa (/ dt (* dx dx))))
          (c1 (* kappa (/ dt (* dy dy))))
          (c2 (- 1d0 (* 2d0 (+ c0 c1)))))
-    (for-scalar-mesh *f* jx jy (*f* *fn*)
+    (for-scalar-mesh-fast *f* jx jy (*f* *fn*)
       (setf-scalar (scalar-mesh-aref *fn* jx jy)
                    (let ((fcc scalar (scalar-mesh-aref *f* jx jy))
                          (fcw scalar (if (= (int jx) 0)
@@ -66,9 +66,8 @@
 (defun output-pnm (dir i nout nx ny)
   (let ((image (make-instance 'imago:grayscale-image
                               :width nx :height ny)))
-    (dotimes (i nx)
-      (dotimes (j ny)
-        (setf (imago:image-pixel image i j) (image-value i j 1.0 0.0))))
+    (for-scalar-mesh *f* i j
+        (setf (imago:image-pixel image i j) (image-value i j 1.0 0.0)))
     (imago:write-pnm image (file-name dir i nout) :ASCII)))
 
 (defmacro swap (a b)

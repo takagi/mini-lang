@@ -27,6 +27,7 @@
            :incf-scalar-array
            :defvar-scalar-mesh
            :for-scalar-mesh
+           :for-scalar-mesh-fast
            :setf-scalar-mesh
            :incf-scalar-mesh
            :defvar-vec3-array
@@ -212,11 +213,20 @@
      (dotimes (,i (scalar-array-size ,x))
        ,@body)))
 
-(defmacro for-scalar-mesh (x i j meshes &rest body)
+(defmacro for-scalar-mesh (x i j &rest body)
+  `(macrolet ((setf-scalar-mesh (exp)
+                `(setf-scalar (scalar-mesh-aref ,',x ,',i ,',j) ,exp))
+              (incf-scalar-mesh (exp)
+                `(incf-scalar (scalar-mesh-aref ,',x ,',i ,',j) ,exp)))
+     (dotimes (,j (scalar-mesh-size-y ,x))
+       (dotimes (,i (scalar-mesh-size-x ,x))
+         ,@body))))
+
+(defmacro for-scalar-mesh-fast (x i j meshes &rest body)
   (let ((tbl (make-raw-mesh-symbol-table meshes)))
     (for-scalar-mesh% tbl tbl x i j body)))
 
-(defun for-scalar-mesh% (tbl orig-tbl x i j body)
+(defun for-scalar-mesh-fast% (tbl orig-tbl x i j body)
   (if (null tbl)
       (for-scalar-mesh-body orig-tbl x i j body)
       (match (car tbl)
@@ -224,7 +234,7 @@
          `(let ((,data (scalar-mesh-data ,mesh))
                 (,size-x (scalar-mesh-size-x ,mesh))
                 (,size-y (scalar-mesh-size-y ,mesh)))
-            ,(for-scalar-mesh% (cdr tbl) orig-tbl x i j body))))))
+            ,(for-scalar-mesh-fast% (cdr tbl) orig-tbl x i j body))))))
 
 
 ;;
