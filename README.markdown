@@ -4,11 +4,11 @@ A simple embedded language on Common Lisp intended to be used to write physical 
 
 ## Syntax
 
-  ;;; the BNF of the operation interfaces
+    ;;; the BNF of the operation interfaces
 
-  (setf-scalar <place> <expression>)
+    (setf-scalar <place> <expression>)
 
-  (incf-scalar <place> <expression>)
+    (incf-scalar <place> <expression>)
 
   (for-scalar-array <variable> <index> <body>)
 
