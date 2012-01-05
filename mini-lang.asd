@@ -14,7 +14,8 @@
   :license "LLGPL"
   :depends-on (:cl-pattern
                :cl-tuples
-               :lol)
+               :anaphora
+               :alexandria)
   :components ((:module "src"
                 :components
                 ((:file "mini-lang"))))

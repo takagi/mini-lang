@@ -8,7 +8,8 @@
   (:use :cl
         :cl-pattern
         :cl-tuples
-        :lol)
+        :anaphora
+        :alexandria)
   (:export :compile-mini-lang
            :bool                        ; external environment references
            :int
@@ -48,10 +49,6 @@
 
 
 ;;; utilities
-
-(defmacro aif (test-form then-form &optional else-form)
-  `(let ((it ,test-form))
-     (if it ,then-form ,else-form)))
 
 (defun binarize (exp)
   (if (atom exp)
@@ -363,7 +360,7 @@
                                         `(vec3-values* ,x ,y ,z)))))
 
 (defun make-symbols-for-values (s)
-  (values (symb s 0) (symb s 1) (symb s 2)))
+  (values (symbolicate s "0") (symbolicate s "1") (symbolicate s "2")))
 
 
 ;;; function application
