@@ -41,7 +41,6 @@
            :vec3-array
            :make-vec3-array
            :vec3-aref
-           :vec3-aref*
            :vec3-array-size
            :norm                        ; built in functions
            ))
