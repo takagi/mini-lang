@@ -1,5 +1,6 @@
 ;;;
 ;;; ToDo:
+;;; * add vec3 operations (vec3-x, vec3-+ and so on)
 ;;; * add descriptions to the tests
 ;;; * use gensym for vec3 in let binding and variable reference, instead of variable names followed by "0", "1" and "2"
 ;;; * with-int, with-scalar and with-vec3 external environment interfaces
