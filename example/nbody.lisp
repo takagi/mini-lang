@@ -71,5 +71,5 @@
 
 (defun main (n)
   (initialize n)
-  (dotimes 100
+  (dotimes (_ 100)
     (update)))
