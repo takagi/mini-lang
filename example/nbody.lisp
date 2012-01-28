@@ -18,9 +18,8 @@
 (defun initialize-x (n)
   (setf *x* (make-vec3-array n))
   (for-vec3-array *x* i
-    (let* ((k (float i 1d0))
-           (x (make-vec3 k k k)))
-      (setf-vec3-array (vec3 x)))))
+    (let* ((k (float i 1d0)))
+      (setf-vec3-array *x* i (vec3 k k k)))))
 
 (defun initialize-v (n)
   (setf *v* (make-vec3-array n)))
@@ -39,29 +38,29 @@
 
 (defun update-x ()
   (for-vec3-array *x* i
-    (incf-vec3-array (* (vec3-aref *v* i) (scalar dt)))))
+    (incf-vec3-array *x* i (* (vec3-aref *v* i) (scalar dt)))))
 
 (defun update-v ()
   (for-vec3-array *v* i
-    (incf-vec3-array (* (vec3-aref *a* i) (scalar dt)))))
+    (incf-vec3-array *v* i (* (vec3-aref *a* i) (scalar dt)))))
 
 (defun update-a ()
   (for-vec3-array *a* i
-    (setf-vec3-array (/ (vec3-aref *f* i) (scalar m)))))
+    (setf-vec3-array *a* i (/ (vec3-aref *f* i) (scalar m)))))
 
 (defun update-f ()  
   (declare (optimize (speed 3) (safety 0)))
   (let ((n (vec3-array-size *x*)))
     (for-vec3-array *f* i
-      (setf-vec3-array (0d0 0d0 0d0))
+      (setf-vec3-array *f* i (0d0 0d0 0d0))
       (dotimes (j n)
         (if (/= i j)
-          (incf-vec3-array (let ((r vec3 (- (vec3-aref *x* j)
-                                            (vec3-aref *x* i)))
-                                 (n vec3 (/ r (norm r))))
-                             (* (/ (* (scalar m) (scalar m) (scalar g))
-                                   (* (norm r) (norm r)))
-                                n))))))))
+          (incf-vec3-array *f* i (let ((r vec3 (- (vec3-aref *x* j)
+                                                  (vec3-aref *x* i)))
+                                       (n vec3 (/ r (norm r))))
+                                   (* (/ (* (scalar m) (scalar m) (scalar g))
+                                         (* (norm r) (norm r)))
+                                      n))))))))
 
 (defun update()
   (update-f)

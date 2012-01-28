@@ -22,61 +22,46 @@
                                           (defvar x)
                                           (defvar y)))
 
-(is (mini-lang::expand-scalar-place 'x) 'x)
-(is (mini-lang::expand-scalar-place '(scalar-aref x i)) '(scalar-aref x i))
-
-(is (mini-lang::expand-vec3-place 'x) '(mini-lang::vec3* x))
-(is (mini-lang::expand-vec3-place '(vec3-aref x i))
-    '(mini-lang::vec3-aref* x i))
-
 (is-expand (setf-scalar x 1d0) (setf x (compile-mini-lang 1d0)))
-(is-expand (setf-scalar (scalar-aref x i) 1d0)
+(is-expand (setf-scalar-array x i 1d0)
            (setf (scalar-aref x i) (compile-mini-lang 1d0)))
 
 (is-expand (incf-scalar x 1d0) (setf-scalar x (+ x 1d0)))
-(is-expand (incf-scalar (scalar-aref x i) 1d0)
-           (setf-scalar (scalar-aref x i) (+ (scalar-aref x i) 1d0)))
+(is-expand (incf-scalar-array x i 1d0)
+           (setf-scalar-array x i (+ (scalar-aref x i) 1d0)))
 
 (is-expand (setf-vec3 x (1d0 1d0 1d0))
            (setf (mini-lang::vec3* x)
                  (compile-mini-lang (1d0 1d0 1d0))))
-(is-expand (setf-vec3 (vec3-aref x i) (1d0 1d0 1d0))
+(is-expand (setf-vec3-array x i (1d0 1d0 1d0))
            (setf (mini-lang::vec3-aref* x i)
                  (compile-mini-lang (1d0 1d0 1d0))))
 
 (is-expand (incf-vec3 x (1d0 1d0 1d0)) (setf-vec3 x (+ x (1d0 1d0 1d0))))
-(is-expand (incf-vec3 (vec3-aref x i) (1d0 1d0 1d0))
-           (setf-vec3 (vec3-aref x i) (+ (vec3-aref x i) (1d0 1d0 1d0))))
+(is-expand (incf-vec3-array x i (1d0 1d0 1d0))
+           (setf-vec3-array x i (+ (vec3-aref x i) (1d0 1d0 1d0))))
 
 (is-expand (for-scalar-array x i
-             (setf-scalar-array 1d0))
-           (macrolet ((setf-scalar-array (exp)
-                        `(setf-scalar (scalar-aref x i) ,exp))
-                      (incf-scalar-array (exp)
-                        `(incf-scalar (scalar-aref x i) ,exp)))
-             (dotimes (i (scalar-array-size x))
-               (setf-scalar-array 1d0))))
+             (setf-scalar-array x i 1d0))
+           (dotimes (i (scalar-array-size x))
+             (setf-scalar-array x i 1d0)))
 
 (is-expand (for-vec3-array x i
-             (setf-vec3-array (1d0 1d0 1d0)))
-           (macrolet ((setf-vec3-array (exp)
-                        `(setf-vec3 (vec3-aref x i) ,exp))
-                      (incf-vec3-array (exp)
-                        `(incf-vec3 (vec3-aref x i) ,exp)))
-             (dotimes (i (vec3-array-size x))
-               (setf-vec3-array (1d0 1d0 1d0)))))
+             (setf-vec3-array x i (1d0 1d0 1d0)))
+           (dotimes (i (vec3-array-size x))
+             (setf-vec3-array x i (1d0 1d0 1d0))))
 
 (is (let ((x (make-scalar-array 1)))
       (for-scalar-array x i
-        (setf-scalar-array 1d0)
-        (incf-scalar-array 1d0))
+        (setf-scalar-array x i 1d0)
+        (incf-scalar-array x i 1d0))
       (scalar-aref x 0))
     2d0)
 
 (is (let ((x (make-vec3-array 1)))
       (for-vec3-array x i
-        (setf-vec3-array (1d0 1d0 1d0))
-        (incf-vec3-array (1d0 1d0 1d0)))
+        (setf-vec3-array x i (1d0 1d0 1d0))
+        (incf-vec3-array x i (1d0 1d0 1d0)))
       (mini-lang::vec3-aref* x 0))
     (mini-lang::vec3-values* 2d0 2d0 2d0))
 

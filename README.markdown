@@ -6,25 +6,25 @@ A simple embedded language on Common Lisp intended to be used to write physical 
 
     ;;; the BNF of the operation interfaces
 
-    (setf-scalar <place> <expression>)
+    (setf-scalar <variable> <expression>)
 
-    (incf-scalar <place> <expression>)
+    (incf-scalar <variable> <expression>)
 
-    (for-scalar-array <variable> <index> <body>)
+    (setf-scalar-array <variable> <index> <expression>)
 
-    (setf-scalar-array <expression>)  ; in a body of for-scalar-array only
+    (incf-scalar-array <variable> <index> <expression>)
 
-    (incf-scalar-array <expression>)  ; in a body of for-scalar-array only
+    (for-scalar-array <variable> <index> <form>*)
 
-    (setf-vec3 <place> <expression>)
+    (setf-vec3 <variable> <expression>)
 
-    (incf-vec3 <place> <expression>)
+    (incf-vec3 <variable> <expression>)
 
-    (for-vec3-array <variable> <index> <body>)
+    (setf-vec3-array <variable> <index> <expression>)
 
-    (setf-vec3-array <expression>)  ; in a body of for-vec3-array only
+    (incf-vec3-array <variable> <index> <expression>)
 
-    (incf-vec3-array <expression>)  ; in a body of for-vec3-array only
+    (for-vec3-array <variable> <index> <form>*)
 
     ;;; the BNF of the expression
 

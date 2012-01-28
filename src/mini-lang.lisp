@@ -145,53 +145,49 @@
           ,@(mapcar (lambda (x)
                       `(defvar ,x)) rest)))
 
-(defmacro setf-scalar (place exp)
+(defmacro setf-scalar (var exp)
   (let ((type (type-of-mini-lang exp)))
     (if (eq type 'scalar)
-        `(setf ,(expand-scalar-place place) (compile-mini-lang ,exp))
+        `(setf ,var (compile-mini-lang ,exp))
         (error (format nil "invalid type of expression: ~A" exp)))))
 
-(defmacro incf-scalar (place exp)
-  `(setf-scalar ,place (+ ,place ,exp)))
+(defmacro incf-scalar (var exp)
+  `(setf-scalar ,var (+ ,var ,exp)))
 
-(defun expand-scalar-place (place)
-  (if (variable-p place)
-      place
-      (match place
-        (('scalar-aref x i) `(scalar-aref ,x ,i))
-        (_ (error (format nil "invalid scalar place: ~A" place))))))
+(defmacro setf-scalar-array (var i exp)
+  (let ((type (type-of-mini-lang exp)))
+    (if (eq type 'scalar)
+        `(setf (scalar-aref ,var ,i) (compile-mini-lang ,exp))
+        (error (format nil "invalid type of expression: ~A" exp)))))
+
+(defmacro incf-scalar-array (var i exp)
+  `(setf-scalar-array ,var ,i (+ (scalar-aref ,var ,i) ,exp)))
 
 (defmacro for-scalar-array (x i &rest body)
-  `(macrolet ((setf-scalar-array (exp)
-                `(setf-scalar (scalar-aref ,',x ,',i) ,exp))
-              (incf-scalar-array (exp)
-                `(incf-scalar (scalar-aref ,',x ,',i) ,exp)))
-     (dotimes (,i (scalar-array-size ,x))
-       ,@body)))
+  `(dotimes (,i (scalar-array-size ,x))
+     ,@body))
 
-(defmacro setf-vec3 (place exp)
+(defmacro setf-vec3 (var exp)
   (let ((type (type-of-mini-lang exp)))
     (if (eq type 'vec3)
-        `(setf ,(expand-vec3-place place) (compile-mini-lang ,exp))
+        `(setf (vec3* ,var) (compile-mini-lang ,exp))
         (error (format nil "invalid type of expression: ~A" exp)))))
 
-(defmacro incf-vec3 (place exp)
-  `(setf-vec3 ,place (+ ,place ,exp)))
+(defmacro incf-vec3 (var exp)
+  `(setf-vec3 ,var (+ ,var ,exp)))
 
-(defun expand-vec3-place (place)
-  (if (variable-p place)
-      `(vec3* ,place)
-      (match place
-        (('vec3-aref x i) `(vec3-aref* ,x ,i))
-        (_ (error (format nil "invalid vec3 place: ~A" place))))))
+(defmacro setf-vec3-array (var i exp)
+  (let ((type (type-of-mini-lang exp)))
+    (if (eq type 'vec3)
+        `(setf (vec3-aref* ,var ,i) (compile-mini-lang ,exp))
+        (error (format nil "invalid type of expression: ~A" exp)))))
+
+(defmacro incf-vec3-array (var i exp)
+  `(setf-vec3-array ,var ,i (+ (vec3-aref ,var ,i) ,exp)))
 
 (defmacro for-vec3-array (x i &rest body)
-  `(macrolet ((setf-vec3-array (exp)
-                `(setf-vec3 (vec3-aref ,',x ,',i) ,exp))
-              (incf-vec3-array (exp)
-                `(incf-vec3 (vec3-aref ,',x ,',i) ,exp)))
-     (dotimes (,i (vec3-array-size ,x))
-       ,@body)))
+  `(dotimes (,i (vec3-array-size ,x))
+     ,@body))
 
 
 ;;; compile
