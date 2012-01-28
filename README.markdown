@@ -50,6 +50,7 @@ A simple embedded language on Common Lisp intended to be used to write physical 
                                        | (int <lisp-form>)
                                        | (scalar <lisp-form>)
                                        | (vec3 <lisp-form>)
+                                       | (vec3 <lisp-form> <lisp-form> <lisp-form>)
                                        | (scalar-aref <lisp-form> <index>)
                                        | (vec3-aref <lisp-form> <index>)
 

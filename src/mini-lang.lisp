@@ -252,6 +252,7 @@
     (('int _) t)
     (('scalar _) t)
     (('vec3 _) t)
+    (('vec3 _ _ _) t)
     (('scalar-aref _ _) t)
     (('vec3-aref _ _) t)
     (_ nil)))
@@ -262,6 +263,7 @@
     (('int x) `(the fixnum ,x))
     (('scalar x) `(the scalar ,x))
     (('vec3 x) `(vec3* ,x))
+    (('vec3 x y z) `(vec3-values* ,x ,y ,z))
     (('scalar-aref x i) `(scalar-aref ,x ,i))
     (('vec3-aref x i) `(vec3-aref* ,x ,i))))
 
@@ -466,6 +468,7 @@
     (('int _) 'int)
     (('scalar _) 'scalar)
     (('vec3 _) 'vec3)
+    (('vec3 _ _ _) 'vec3)
     (('scalar-aref _ _) 'scalar)
     (('vec3-aref _ _) 'vec3)))
 

@@ -27,7 +27,7 @@
 
 (is (mini-lang::expand-vec3-place 'x) '(mini-lang::vec3* x))
 (is (mini-lang::expand-vec3-place '(vec3-aref x i))
-    '(vec3-aref* x i))
+    '(mini-lang::vec3-aref* x i))
 
 (is-expand (setf-scalar x 1d0) (setf x (compile-mini-lang 1d0)))
 (is-expand (setf-scalar (scalar-aref x i) 1d0)
@@ -107,10 +107,11 @@
 (is (mini-lang::external-environment-reference-p '(bool x)) t)
 (is (mini-lang::external-environment-reference-p '(int x)) t)
 (is (mini-lang::external-environment-reference-p '(scalar x)) t)
+(is (mini-lang::external-environment-reference-p '(scalar x y)) nil)
 (is (mini-lang::external-environment-reference-p '(vec3 x)) t)
+(is (mini-lang::external-environment-reference-p '(vec3 x y z)) t)
 (is (mini-lang::external-environment-reference-p '(scalar-aref x i)) t)
 (is (mini-lang::external-environment-reference-p '(vec3-aref x i)) t)
-(is (mini-lang::external-environment-reference-p '(scalar x y)) nil)
 
 (is (mini-lang::compile-external-environment-reference '(bool x))
     'x)
@@ -120,6 +121,8 @@
     '(the scalar x))
 (is (mini-lang::compile-external-environment-reference '(vec3 x))
     '(mini-lang::vec3* x))
+(is (mini-lang::compile-external-environment-reference '(vec3 x y z))
+    '(mini-lang::vec3-values* x y z))
 (is (mini-lang::compile-external-environment-reference '(scalar-aref x i))
     '(scalar-aref x i))
 (is (mini-lang::compile-external-environment-reference '(vec3-aref x i))
@@ -278,6 +281,7 @@
 (is (mini-lang::type-of-external-environment-reference '(int x)) 'int)
 (is (mini-lang::type-of-external-environment-reference '(scalar x)) 'scalar)
 (is (mini-lang::type-of-external-environment-reference '(vec3 x)) 'vec3)
+(is (mini-lang::type-of-external-environment-reference '(vec3 x y z)) 'vec3)
 (is (mini-lang::type-of-external-environment-reference '(scalar-aref x i))
     'scalar)
 (is (mini-lang::type-of-external-environment-reference '(vec3-aref x i))
