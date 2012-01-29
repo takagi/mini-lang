@@ -4,9 +4,7 @@ A simple embedded language on Common Lisp intended to be used to write physical 
 
 ## Syntax
 
-    ;;; the BNF of the operation interfaces
-
-    ;; operation interfaces for scalar type
+    ;;; operation interfaces for scalar type
 
     (setf-scalar <variable> <expression>)
 
@@ -18,7 +16,7 @@ A simple embedded language on Common Lisp intended to be used to write physical 
 
     (for-scalar-array <variable> <index> <form>*)
 
-    ;; operation interfaces for vec3 type
+    ;;; operation interfaces for vec3 type
 
     (setf-vec3 <variable> <expression>)
 
