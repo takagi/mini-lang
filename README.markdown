@@ -14,7 +14,7 @@ A simple embedded language on Common Lisp intended to be used to write physical 
 
     (incf-scalar-array <variable> <index> <expression>)
 
-    (for-scalar-array <variable> <index> <form>*)
+    (for-scalar-array <variable> <index> <lisp-form>*)
 
     ;;; operation interfaces for vec3 type
 
@@ -26,7 +26,7 @@ A simple embedded language on Common Lisp intended to be used to write physical 
 
     (incf-vec3-array <variable> <index> <expression>)
 
-    (for-vec3-array <variable> <index> <form>*)
+    (for-vec3-array <variable> <index> <lisp-form>*)
 
     ;;; the BNF of the expression
 
