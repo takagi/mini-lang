@@ -29,8 +29,8 @@
            :for-vec3-array
            :setf-vec3-array
            :incf-vec3-array
-           :bool                        ; bool
-           :int                         ; int
+           :bool                        ; bool type
+           :int                         ; int type
            :scalar                      ; scalar and scalar array
            :scalar-array
            :make-scalar-array
@@ -42,6 +42,8 @@
            :make-vec3-array
            :vec3-aref
            :vec3-array-size
+           :clear-functions             ; interface for user-defined functions
+           :define-function
            :norm                        ; built in functions
            ))
 (in-package :mini-lang)
@@ -131,7 +133,7 @@
   ((vec vec3 (x y z)))
   (:return double-float
            (sqrt (+ (* x x) (* y y) (* z z)))))
-           
+
 
 ;;; operation interface
 
@@ -205,7 +207,10 @@
         ((let-p exp) (compile-let exp type-env))
         ((if-p exp) (compile-if exp type-env))
         ((variable-p exp) (compile-variable exp type-env))
-        ((application-p exp) (compile-application exp type-env))
+        ((user-defined-application-p exp)
+         (compile-user-defined-application exp type-env))
+        ((built-in-application-p exp)
+         (compile-built-in-application exp type-env))
         (t (error (format nil "invalid expression: ~A" exp)))))
 
 
@@ -360,9 +365,63 @@
   (values (symbolicate s "0") (symbolicate s "1") (symbolicate s "2")))
 
 
-;;; function application
+;;; definition and application of user-defined functions
 
-(defvar built-in-functions              ; constant
+;; *user-defined-functions*
+;; (<name> ((<args>) <exp>)
+;;  <name> ((<args>) <exp>) ...) where <args> ::= (<type> <var>)*
+;;
+;; e.g.
+;; (f (((scalar x)) (+ x 1d0))
+;;  g (((vec3 x) (vec3 y)) (+ x (+ y (1d0 1d0 1d0)))))
+;;
+
+(defvar *user-defined-functions* nil)
+
+(defun clear-functions ()
+  (setf *user-defined-functions* nil))
+
+(defmacro define-function (name args exp)
+  (labels ((valid-arg (arg)
+             (and (consp arg) (= (length arg) 2))))
+    (if (and (consp args)
+             (every #'valid-arg args))
+        `(progn
+           (setf (getf *user-defined-functions* ',name)
+                 `(,',args ,',(binarize exp)))
+           ',name)
+        (error (format nil "invalid function definition: (define-function ~A ~A ~A)" name args exp)))))
+
+(defun user-function-args (fun)
+  (car (getf *user-defined-functions* fun)))
+
+(defun user-function-exp (fun)
+  (cadr (getf *user-defined-functions* fun)))
+
+(defun user-defined-application-p (exp)
+  (match exp
+    ((fun . _) (not (null (getf *user-defined-functions* fun))))
+    (_ nil)))
+
+(defun compile-user-defined-application (exp type-env)
+  (match exp
+    ((fun . vals) (compile-exp (compile-user-defined-application% exp fun vals)
+                               type-env))))
+
+(defun compile-user-defined-application% (exp fun vals)
+  (labels ((binding (var val)
+             (match var
+               ((type v) (list v type val)))))
+    (let ((vars (user-function-args fun)))
+      (if (= (length vars) (length vals))
+          `(let (,@(mapcar #'binding vars vals))
+             ,(user-function-exp fun))
+          (error (format nil "invalid number of arguments: ~A" exp))))))
+
+
+;;; application of built-in functions
+
+(defvar *built-in-functions*              ; constant
   '(+ (((int int) int +)
        ((scalar scalar) scalar +)
        ((vec3 vec3) vec3 vec3-add*))
@@ -380,14 +439,16 @@
        ((vec3 scalar) vec3 vec3-scale-recip*))
     norm (((vec3) scalar vec3-norm*))
     exp (((scalar) scalar exp))
-    = (((int int) bool =))))
+    expt (((scalar int) scalar expt))
+    = (((int int) bool =))
+    <= (((scalar scalar) bool <=))))
 
-(defun application-p (exp)
+(defun built-in-application-p (exp)
   (match exp
-    ((op . _) (not (null (getf built-in-functions op))))
+    ((op . _) (not (null (getf *built-in-functions* op))))
     (_ nil)))
 
-(defun compile-application (exp type-env)
+(defun compile-built-in-application (exp type-env)
   (match exp
     ((op . operands) (let ((candidates (operation-candidates op)))
                        (aif (infer-op operands candidates type-env)
@@ -420,7 +481,7 @@
 ;; (((scalar scalar) scalar +)
 ;;  ((vec3 vec3) vec3 vec3-add*))
 (defun operation-candidates (op)
-  (getf built-in-functions op))
+  (getf *built-in-functions* op))
 
 
 ;;; type
@@ -438,7 +499,10 @@
         ((let-p exp) (type-of-let exp type-env))
         ((if-p exp) (type-of-if exp type-env))
         ((variable-p exp) (type-of-variable exp type-env))
-        ((application-p exp) (type-of-application exp type-env))
+        ((user-defined-application-p exp)
+         (type-of-user-defined-application exp type-env))
+        ((built-in-application-p exp)
+         (type-of-built-in-application exp type-env))
         (t (error (format nil "invalid expression: ~A" exp)))))
 
 (defun bool-type-p (exp type-env)
@@ -517,7 +581,12 @@
     (nil  (error (format nil "unbound variable: ~A" var)))
     (type type)))
 
-(defun type-of-application (exp type-env)
+(defun type-of-user-defined-application (exp type-env)
+  (match exp
+    ((fun . args) (type-of-exp (compile-user-defined-application% exp fun args)
+                               type-env))))
+
+(defun type-of-built-in-application (exp type-env)
   (match exp
     ((op . operands) (let ((candidates (operation-candidates op)))
                        (aif (infer-return-type operands candidates type-env)

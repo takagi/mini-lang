@@ -28,6 +28,14 @@ A simple embedded language on Common Lisp intended to be used to write physical 
 
     (for-vec3-array <variable> <index> <lisp-form>*)
 
+    ;;; function definition
+
+    (define-function <name> (<args>) <exp>)
+      where <args> ::= <arg>*
+            <arg>  ::= (<type> <variable>)
+
+    (clear-functions)
+
     ;;; the BNF of the expression
 
     <expression> ::= <bool-literal>
@@ -38,7 +46,8 @@ A simple embedded language on Common Lisp intended to be used to write physical 
                    | (let (<binding>*) <expression>)
                    | (if <expression> <expression> <expression>)
                    | <variable>
-                   | (<op> <expression>*)
+                   | (<user-defined-function> <expression>*)
+                   | (<built-in-function> <expression>*)
 
     <bool-literal> ::= t | nil
 
@@ -64,7 +73,9 @@ A simple embedded language on Common Lisp intended to be used to write physical 
 
     <variable> ::= a symbol
 
-    <op> ::= + | - | * | / | norm | exp | =
+    <user-defined-function> ::= a function defined by define-function
+
+    <built-in-function> ::= + | - | * | / | norm | exp | expt | = | <=
 
 
 ## Usage

@@ -193,36 +193,72 @@
   (is c 'x2))
 
 
-;;; test function application
+;;; test definition and application of user defined functions
 
-(is (mini-lang::application-p '(+ 1d0 1d0)) t)
-(is (mini-lang::application-p '(++ 1d0 1d0)) nil)
+(clear-functions)
 
-(is (mini-lang::compile-application '(+ 1d0 1d0) nil)
+(define-function f ((scalar x))
+  (+ x 1d0))
+(is-error (macroexpand '(define-function f x (+ x 1d0))) simple-error)
+(is-error (macroexpand '(define-function f (scalar x) (+ x 1d0))) simple-error)
+(is (mini-lang::user-defined-application-p '(f 1d0)) t)
+(is (mini-lang::user-defined-application-p '(f2 1d0)) nil)
+(is (mini-lang::compile-user-defined-application '(f 1d0) nil)
+    '(let ((x 1d0))
+       (+ x 1d0)))
+(is-error (mini-lang::compile-user-defined-application '(f 1d0 1d0) nil)
+          simple-error)
+
+(define-function g ((scalar x) (scalar y))
+  (+ x y 1d0))
+(is (mini-lang::user-defined-application-p '(g 1d0 1d0)) t)
+(is (mini-lang::compile-user-defined-application '(g 1d0 1d0) nil)
+    '(let ((x 1d0))
+      (let ((y 1d0))
+        (+ (+ x y) 1d0))))
+
+(define-function f ((vec3 x))  ; test redefinition of f
+  (+ x (1d0 1d0 1d0)))
+(is (mini-lang::user-defined-application-p '(f (1d0 1d0 1d0))) t)
+(is (mini-lang::compile-user-defined-application '(f (1d0 1d0 1d0)) nil)
+    '(multiple-value-bind (x0 x1 x2) (mini-lang::vec3-values* 1d0 1d0 1d0)
+       (mini-lang::vec3-add* (mini-lang::vec3-values* x0 x1 x2)
+                             (mini-lang::vec3-values* 1d0 1d0 1d0))))
+(is-error (mini-lang::compile-user-defined-application '(f 1d0) nil)
+          simple-error)
+
+
+;;; test application of built-in functions
+
+(is (mini-lang::built-in-application-p '(+ 1d0 1d0)) t)
+(is (mini-lang::built-in-application-p '(++ 1d0 1d0)) nil)
+
+(is (mini-lang::compile-built-in-application '(+ 1d0 1d0) nil)
     '(+ 1d0 1d0))
 (is (let ((type-env (mini-lang::add-type-environment 'x 'scalar
                       (mini-lang::add-type-environment 'y 'scalar
                         (mini-lang::empty-type-environment)))))
-      (mini-lang::compile-application '(+ x y) type-env))
+      (mini-lang::compile-built-in-application '(+ x y) type-env))
     '(+ x y))
-(is (mini-lang::compile-application '(+ (1d0 1d0 1d0) (1d0 1d0 1d0)) nil)
+(is (mini-lang::compile-built-in-application '(+ (1d0 1d0 1d0) (1d0 1d0 1d0))
+                                             nil)
     '(mini-lang::vec3-add* (mini-lang::vec3-values* 1d0 1d0 1d0)
                              (mini-lang::vec3-values* 1d0 1d0 1d0)))
 (is (let ((type-env (mini-lang::add-type-environment 'x 'vec3
                       (mini-lang::add-type-environment 'y 'vec3
                         (mini-lang::empty-type-environment)))))
-      (mini-lang::compile-application '(+ x y) type-env))
+      (mini-lang::compile-built-in-application '(+ x y) type-env))
     '(mini-lang::vec3-add* (mini-lang::vec3-values* x0 x1 x2)
                              (mini-lang::vec3-values* y0 y1 y2)))
 
-(is-error (mini-lang::compile-application '(++ 1d0 1d0) nil)
+(is-error (mini-lang::compile-built-in-application '(++ 1d0 1d0) nil)
           simple-error)
-(is-error (mini-lang::compile-application '(+ (1d0 1d0 1d0) 1d0) nil)
+(is-error (mini-lang::compile-built-in-application '(+ (1d0 1d0 1d0) 1d0) nil)
           simple-error)
 
-(is (mini-lang::compile-application '(* (1d0 1d0 1d0) 1d0) nil)
+(is (mini-lang::compile-built-in-application '(* (1d0 1d0 1d0) 1d0) nil)
     '(mini-lang::vec3-scale* (mini-lang::vec3-values* 1d0 1d0 1d0) 1d0))
-(is (mini-lang::compile-application '(* 1d0 (1d0 1d0 1d0)) nil)
+(is (mini-lang::compile-built-in-application '(* 1d0 (1d0 1d0 1d0)) nil)
     '(mini-lang::vec3-scale%* 1d0 (mini-lang::vec3-values* 1d0 1d0 1d0)))
 
 (is (mini-lang::operand-types '(x y) '((x . scalar) (y . scalar)))
@@ -236,18 +272,18 @@
                                   '((x . vec3) (y . vec3)))
     'vec3)
 
-(is (mini-lang::compile-application '(norm (1d0 1d0 1d0)) nil)
+(is (mini-lang::compile-built-in-application '(norm (1d0 1d0 1d0)) nil)
     '(mini-lang::vec3-norm* (mini-lang::vec3-values* 1d0 1d0 1d0)))
 
-(is (mini-lang::compile-application '(- 1d0) nil)
+(is (mini-lang::compile-built-in-application '(- 1d0) nil)
     '(- 1d0))
-(is (mini-lang::compile-application '(- (1d0 1d0 1d0)) nil)
+(is (mini-lang::compile-built-in-application '(- (1d0 1d0 1d0)) nil)
     `(mini-lang::vec3-negate* (mini-lang::vec3-values* 1d0 1d0 1d0)))
 
-(is (mini-lang::compile-application '(exp 1d0) nil)
+(is (mini-lang::compile-built-in-application '(exp 1d0) nil)
     '(exp 1d0))
 
-(is (mini-lang::compile-application '(= 1 1) nil)
+(is (mini-lang::compile-built-in-application '(= 1 1) nil)
     '(= 1 1))
 
 
@@ -297,12 +333,22 @@
 (is-error (mini-lang::type-of-if '(if t 2d0 (1d0 1d0 1d0)) nil) simple-error)
 (is-error (mini-lang::type-of-if '(if 1d0 2d0 1d0) nil) simple-error)
 
-(is (mini-lang::type-of-application '(= 1 1) nil) 'bool)
-(is (mini-lang::type-of-application '(* 1d0 1d0) nil) 'scalar)
-(is (mini-lang::type-of-application '(* (1d0 1d0 1d0) 1d0) nil) 'vec3)
-(is-error (mini-lang::type-of-application '(++ 1d0 1d0) nil) simple-error)
-(is-error (mini-lang::type-of-application '(* (1d0 1d0 1d0) (1d0 1d0 1d0)) nil)
-                                          simple-error)
+(clear-functions)
+(define-function f ((scalar x))
+  (+ x 1d0))
+(is (mini-lang::type-of-user-defined-application '(f 1d0) nil) 'scalar)
+(define-function g ((vec3 x))
+  (+ x (1d0 1d0 1d0)))
+(is (mini-lang::type-of-user-defined-application '(g (1d0 1d0 1d0)) nil) 'vec3)
+
+(is (mini-lang::type-of-built-in-application '(= 1 1) nil) 'bool)
+(is (mini-lang::type-of-built-in-application '(* 1d0 1d0) nil) 'scalar)
+(is (mini-lang::type-of-built-in-application '(* (1d0 1d0 1d0) 1d0) nil) 'vec3)
+(is-error (mini-lang::type-of-built-in-application '(++ 1d0 1d0) nil)
+          simple-error)
+(is-error (mini-lang::type-of-built-in-application '(* (1d0 1d0 1d0)
+                                                     (1d0 1d0 1d0)) nil)
+          simple-error)
 
 
 ;;; test type environment
