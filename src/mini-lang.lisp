@@ -386,7 +386,7 @@
              (and (consp arg) (= (length arg) 2))))
     (if (and (consp args)
              (every #'valid-arg args))
-        `(progn
+        `(eval-when (:compile-toplevel :load-toplevel :execute)
            (setf (getf *user-defined-functions* ',name)
                  `(,',args ,',(binarize exp)))
            ',name)
