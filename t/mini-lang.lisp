@@ -197,6 +197,8 @@
 
 (clear-functions)
 
+(define-function f () 1d0)
+
 (define-function f ((scalar x))
   (+ x 1d0))
 (is-error (macroexpand '(define-function f x (+ x 1d0))) simple-error)

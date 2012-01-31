@@ -383,13 +383,21 @@
 
 (defmacro define-function (name args exp)
   (labels ((valid-arg (arg)
-             (and (consp arg) (= (length arg) 2))))
-    (if (and (consp args)
+             (and (consp arg) (= (length arg) 2)))
+           (type-env (args)
+             (reduce (lambda (env x)
+                       (match x
+                         ((type var) (add-type-environment var type env))))
+                     args :initial-value (empty-type-environment))))
+    (if (and (listp args)
              (every #'valid-arg args))
-        `(eval-when (:compile-toplevel :load-toplevel :execute)
-           (setf (getf *user-defined-functions* ',name)
-                 `(,',args ,',(binarize exp)))
-           ',name)
+        (progn
+          ; provisional compilation for error finding
+          (compile-exp (binarize exp) (type-env args))
+          `(eval-when (:compile-toplevel :load-toplevel :execute)
+             (setf (getf *user-defined-functions* ',name)
+                   `(,',args ,',(binarize exp)))
+             ',name))
         (error (format nil "invalid function definition: (define-function ~A ~A ~A)" name args exp)))))
 
 (defun user-function-args (fun)
@@ -441,7 +449,8 @@
     exp (((scalar) scalar exp))
     expt (((scalar int) scalar expt))
     = (((int int) bool =))
-    <= (((scalar scalar) bool <=))))
+    <= (((scalar scalar) bool <=))
+    > (((scalar scalar) bool >))))
 
 (defun built-in-application-p (exp)
   (match exp
@@ -597,7 +606,7 @@
 
 ;;; type environment
 
-;; env   ::= (<variable> . <type>)*
+;; env ::= ((<variable> . <type>)*)
 
 (defun empty-type-environment ()
   '())
