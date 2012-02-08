@@ -37,6 +37,7 @@
            :scalar-aref
            :scalar-array-size
            :vec3                        ; vec3 and vec3 array
+           :vec3-x :vec3-y :vec3-z
            :make-vec3
            :vec3-array
            :make-vec3-array
@@ -45,6 +46,7 @@
            :clear-functions             ; interface for user-defined functions
            :define-function
            :norm                        ; built in functions
+           :dot
            ))
 (in-package :mini-lang)
 
@@ -57,8 +59,7 @@
       (if (and (nthcdr 3 exp)
                (member (car exp) '(+ - * /)))
           (destructuring-bind (op a1 a2 . rest) exp
-            `(,op (,op ,(binarize a1) ,(binarize a2))
-                  ,@(mapcar #'binarize rest)))
+            (binarize `(,op (,op ,(binarize a1) ,(binarize a2)) ,@rest)))
           (destructuring-bind (op . rest) exp
             `(,op ,@(mapcar #'binarize rest))))))
 
@@ -98,12 +99,28 @@
     :initial-element 0d0
     :elements (x y z))
 
+(defmacro vec3-x (x) `(aref ,x 0))
+(defmacro vec3-y (x) `(aref ,x 1))
+(defmacro vec3-z (x) `(aref ,x 2))
+
 (declaim (ftype (function (vec3-array) fixnum) vec3-array-size))
 (defun vec3-array-size (x)
   (vec3-array-dimensions x))
 
 (defmacro vec3-negate* (x)
   `(vec3-scale* ,x -1d0))
+
+(def-tuple-op vec3-x*
+  ((vec vec3 (x y z)))
+  (:return scalar x))
+
+(def-tuple-op vec3-y*
+  ((vec vec3 (x y z)))
+  (:return scalar y))
+
+(def-tuple-op vec3-z*
+  ((vec vec3 (x y z)))
+  (:return scalar z))
 
 (def-tuple-op vec3-add*
   ((veca vec3 (x1 y1 z1))
@@ -133,6 +150,12 @@
   ((vec vec3 (x y z)))
   (:return double-float
            (sqrt (+ (* x x) (* y y) (* z z)))))
+
+(def-tuple-op vec3-dot*
+  ((veca vec3 (x1 y1 z1))
+   (vecb vec3 (x2 y2 z2)))
+  (:return double-float
+           (+ (* x1 x2) (* y1 y2) (* z1 z2))))
 
 
 ;;; operation interface
@@ -185,7 +208,7 @@
         (error (format nil "invalid type of expression: ~A" exp)))))
 
 (defmacro incf-vec3-array (var i exp)
-  `(setf-vec3-array ,var ,i (+ (vec3-aref ,var ,i) ,exp)))
+  `(setf-vec3-array ,var ,i (+ ,exp (vec3-aref ,var ,i))))
 
 (defmacro for-vec3-array (x i &rest body)
   `(dotimes (,i (vec3-array-size ,x))
@@ -322,6 +345,7 @@
           (let ((type-env2 (add-type-environment var 'vec3 type-env)))
             (multiple-value-bind (x y z) (make-symbols-for-values var)
               `(multiple-value-bind (,x ,y ,z) ,(compile-exp val type-env)
+;                 (declare (ignorable ,x ,y ,z))
                  ,(compile-let% rest exp type-env2))))
           (error (format nil "contradict type in let bind: ~A" var))))))
 
@@ -430,7 +454,10 @@
 ;;; application of built-in functions
 
 (defvar *built-in-functions*              ; constant
-  '(+ (((int int) int +)
+  '(vec3-x (((vec3) scalar vec3-x*))
+    vec3-y (((vec3) scalar vec3-y*))
+    vec3-z (((vec3) scalar vec3-z*))
+    + (((int int) int +)
        ((scalar scalar) scalar +)
        ((vec3 vec3) vec3 vec3-add*))
     - (((int) int -)
@@ -446,11 +473,20 @@
     / (((scalar scalar) scalar /)
        ((vec3 scalar) vec3 vec3-scale-recip*))
     norm (((vec3) scalar vec3-norm*))
+    dot (((vec3 vec3) scalar vec3-dot*))
     exp (((scalar) scalar exp))
     expt (((scalar int) scalar expt))
     = (((int int) bool =))
     <= (((scalar scalar) bool <=))
-    > (((scalar scalar) bool >))))
+    > (((scalar scalar) bool >))
+    debug (((bool) bool debug%)
+           ((int) int debug%)
+           ((scalar) scalar debug%)
+           ((vec3) vec3 debug%))))
+
+(defun debug% (x)
+  (format t "~A~%" x)
+  x)
 
 (defun built-in-application-p (exp)
   (match exp
