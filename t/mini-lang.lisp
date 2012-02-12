@@ -39,7 +39,7 @@
 
 (is-expand (incf-vec3 x (1d0 1d0 1d0)) (setf-vec3 x (+ x (1d0 1d0 1d0))))
 (is-expand (incf-vec3-array x i (1d0 1d0 1d0))
-           (setf-vec3-array x i (+ (vec3-aref x i) (1d0 1d0 1d0))))
+           (setf-vec3-array x i (+ (1d0 1d0 1d0) (vec3-aref x i))))
 
 (is-expand (for-scalar-array x i
              (setf-scalar-array x i 1d0))
