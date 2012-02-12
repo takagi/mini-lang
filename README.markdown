@@ -14,7 +14,7 @@ A simple embedded language on Common Lisp intended to be used to write physical 
 
     (incf-scalar-array <variable> <index> <expression>)
 
-    (for-scalar-array <variable> <index> <lisp-form>*)
+    (for-scalar-array <array-variable> <index-variable> <lisp-form>*)
 
     ;;; operation interfaces for vec3 type
 
@@ -26,7 +26,7 @@ A simple embedded language on Common Lisp intended to be used to write physical 
 
     (incf-vec3-array <variable> <index> <expression>)
 
-    (for-vec3-array <variable> <index> <lisp-form>*)
+    (for-vec3-array <array-variable> <index-variable> <lisp-form>*)
 
     ;;; function definition
 
@@ -75,7 +75,7 @@ A simple embedded language on Common Lisp intended to be used to write physical 
 
     <user-defined-function> ::= a function defined by define-function
 
-    <built-in-function> ::= + | - | * | / | norm | exp | expt | = | <=
+    <built-in-function> ::= + | - | * | / | norm | dot | exp | expt | = | <= | > | debug
 
 
 ## Usage
