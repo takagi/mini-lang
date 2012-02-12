@@ -73,6 +73,10 @@ A simple embedded language on Common Lisp intended to be used to write physical 
 
     <variable> ::= a symbol
 
+    <array-variable> ::= a symbol
+
+    <index-variable> ::= a symbol
+
     <user-defined-function> ::= a function defined by define-function
 
     <built-in-function> ::= + | - | * | / | norm | dot | exp | expt | = | <= | > | debug
