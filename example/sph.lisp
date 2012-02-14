@@ -277,25 +277,26 @@
                                   (scalar intstiff)))))
 
 (define-function pressure-term ()
-  (let ((dr vec3 (* (- (vec3-aref *x* i) (vec3-aref *x* j))
+  (let ((dr vec3 (* (- (vec3-aref x i) (vec3-aref x j))
                     (scalar simscale))))
     (* (* (- (scalar pmass)) (/ (+ (scalar-aref *prs* i) (scalar-aref *prs* j))
                                 (* 2d0 (scalar-aref *rho* j))))
        (grad-spiky-kernel dr))))
 
-(defun viscosity-term ()
-  (let ((dr vec3 (* (- (vec3-aref *x* i) (vec3-aref *x* j))
+(define-function viscosity-term ()
+  (let ((dr vec3 (* (- (vec3-aref x i) (vec3-aref x j))
                     (scalar simscale))))
     (* (* (scalar visc) (/ (* (scalar pmass)
                               (- (vec3-aref *v* j) (vec3-aref *v* i)))
                            (scalar-aref *rho* j)))
        (rap-visc-kernel dr))))
 
-(defun update-force ()
+(defun update-force (x)
   (declare (optimize (speed 3) (safety 0)))
+  (declare (type vec3-array x))
   (for-vec3-array *f* i
     (setf-vec3-array *f* i (vec3 0d0 0d0 0d0))
-    (for-neighbors *nbr* (*x* i) j
+    (for-neighbors *nbr* (x i) j
       (when (/= i j)
         (incf-vec3-array *f* i
           (+ (pressure-term)
@@ -381,6 +382,6 @@
       (update-neighbor-map *nbr* *x*)
       (update-density)
       (update-pressure)
-      (update-force)
+      (update-force *x*)
       (update-velocity)
       (update-position)));)
