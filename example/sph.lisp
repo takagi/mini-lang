@@ -276,14 +276,14 @@
                                      (scalar restdensity))
                                   (scalar intstiff)))))
 
-(define-function pressure-term ((int i) (int j))
+(define-function pressure-term ()
   (let ((dr vec3 (* (- (vec3-aref *x* i) (vec3-aref *x* j))
                     (scalar simscale))))
     (* (* (- (scalar pmass)) (/ (+ (scalar-aref *prs* i) (scalar-aref *prs* j))
                                 (* 2d0 (scalar-aref *rho* j))))
        (grad-spiky-kernel dr))))
 
-(define-function viscosity-term ((int i) (int j))
+(defun viscosity-term ()
   (let ((dr vec3 (* (- (vec3-aref *x* i) (vec3-aref *x* j))
                     (scalar simscale))))
     (* (* (scalar visc) (/ (* (scalar pmass)
@@ -298,8 +298,8 @@
     (for-neighbors *nbr* (*x* i) j
       (when (/= i j)
         (incf-vec3-array *f* i
-          (+ (pressure-term (int i) (int j))
-             (viscosity-term (int i) (int j))))))))
+          (+ (pressure-term)
+             (viscosity-term)))))))
 
 (define-function wall ((scalar d) (vec3 norm) (vec3 a))
   (let ((diff scalar (- (* 2d0 (scalar radius))
@@ -310,32 +310,32 @@
         (+ a (* adj norm))
         a)))
 
-(define-function x-wall-max ((int i) (vec3 a))
+(define-function x-wall-max ((vec3 a))
   (wall (- (vec3-x (vec3 box-max)) (vec3-x (vec3-aref *x* i)))
         (-1d0 0d0 0d0)
         a))
 
-(define-function x-wall-min ((int i) (vec3 a))
+(define-function x-wall-min ((vec3 a))
   (wall (- (vec3-x (vec3-aref *x* i)) (vec3-x (vec3 box-min)))
         (1d0 0d0 0d0)
         a))
 
-(define-function y-wall-max ((int i) (vec3 a))
+(define-function y-wall-max ( (vec3 a))
   (wall (- (vec3-y (vec3 box-max)) (vec3-y (vec3-aref *x* i)))
         (0d0 -1d0 0d0)
         a))
 
-(define-function y-wall-min ((int i) (vec3 a))
+(define-function y-wall-min ((vec3 a))
   (wall (- (vec3-y (vec3-aref *x* i)) (vec3-y (vec3 box-min)))
         (0d0 1d0 0d0)
         a))
 
-(define-function z-wall-max ((int i) (vec3 a))
+(define-function z-wall-max ((vec3 a))
   (wall (- (vec3-z (vec3 box-max)) (vec3-z (vec3-aref *x* i)))
         (0d0 0d0 -1d0)
         a))
 
-(define-function z-wall-min ((int i) (vec3 a))
+(define-function z-wall-min ((vec3 a))
   (wall (- (vec3-z (vec3-aref *x* i)) (vec3-z (vec3 box-min)))
         (0d0 0d0 1d0)
         a))
@@ -346,12 +346,12 @@
         (* (/ (scalar limit) speed) a)
         a)))
 
-(define-function boundary ((int i) (vec3 a))
-    (x-wall-min i
-      (x-wall-max i
-        (y-wall-min i
-          (z-wall-max i
-            (z-wall-min i
+(define-function boundary ((vec3 a))
+    (x-wall-min
+      (x-wall-max
+        (y-wall-min
+          (z-wall-max
+            (z-wall-min
               (accel-limit a)))))))
 
 (defun update-velocity ()
@@ -360,7 +360,7 @@
   (for-vec3-array *v* i
     (incf-vec3-array *v* i
       (let ((a vec3 (+ (/ (vec3-aref *f* i) (scalar-aref *rho* i)) (vec3 g))))
-        (* (boundary (int i) a) (scalar dt))))))
+        (* (boundary a) (scalar dt))))))
 
 (defun update-position ()
   (declare (optimize (speed 3) (safety 0)))
