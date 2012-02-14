@@ -117,19 +117,11 @@
         (setf (aref (neighbor-map-array nbr) (neighbor-map-index nbr i j k))
               nil)))))
 
-(declaim (ftype (function (neighbor-map vec3-array (signed-byte 32))
-                          (values fixnum fixnum fixnum))
-                neighbor-map-pos-to-index))
-(defun neighbor-map-pos-to-index (nbr array index)
-  (declare (optimize (speed 3) (safety 0)))
-  (multiple-value-bind (x y z) (mini-lang::vec3-aref* array index)
-    (neighbor-map-pos-to-index% nbr x y z)))
-
 (declaim (ftype (function (neighbor-map scalar scalar scalar)
                           (values fixnum fixnum fixnum))
-                neighbor-map-pos-to-index%))
-(declaim (inline neighbor-map-pos-to-index%))
-(defun neighbor-map-pos-to-index% (nbr x y z)
+                neighbor-map-pos-to-index))
+(declaim (inline neighbor-map-pos-to-index))
+(defun neighbor-map-pos-to-index (nbr x y z)
   (declare (optimize (speed 3) (safety 0)))
   (labels ((index (x0 x d)
              (let ((idx (/ (- x x0) d)))
@@ -144,55 +136,41 @@
            (k (index (vec3-z min) z delta)))
       (values i j k))))
 
-(defun insert-particle (nbr pos idx)
-  (multiple-value-bind (i j k) (neighbor-map-pos-to-index nbr pos idx)
+(defun insert-particle (nbr x y z idx)
+  (multiple-value-bind (i j k) (neighbor-map-pos-to-index nbr x y z)
     (when (neighbor-map-valid-index nbr i j k)
       (push idx (aref (neighbor-map-array nbr) (neighbor-map-index nbr i j k))))))
 
 (defun update-neighbor-map (nbr xs)
   (clear-neighbor-map nbr)
   (for-vec3-array xs i
-    (insert-particle nbr xs i)))
+    (with-vec3-aref (xs i (x y z))
+      (insert-particle nbr x y z i))))
 
 (defmacro for-neighbors-in-cell (nbr i j k var &rest body)
   `(dolist (,var (neighbor-map-particles ,nbr ,i ,j ,k))
      (declare (type (signed-byte 32) ,var))
      ,@body))
 
-#|
-(defmacro for-neighbors (nbr xs index var &rest body)
+(defmacro for-neighbors (nbr pos var &rest body)
+  (match pos
+    ((x y z) `(for-neighbors% ,nbr ,x ,y ,z ,var ,@body))
+    ((xs idx) (with-gensyms (x y z)
+                `(with-vec3-aref (,xs ,idx (,x ,y ,z))
+                   (for-neighbors% ,nbr ,x ,y ,z ,var ,@body))))
+    ((val) (with-gensyms (x y z)
+             `(with-vec3 ,val (,x ,y ,z)
+                (for-neighbors% ,nbr ,x ,y ,z ,var ,@body))))))
+
+(defmacro for-neighbors% (nbr x y z var &rest body)
   (with-gensyms (i j k di dj dk)
     `(multiple-value-bind (,i ,j ,k)
-         (neighbor-map-pos-to-index ,nbr ,xs ,index)
+         (neighbor-map-pos-to-index ,nbr ,x ,y ,z)
        (dolist (,di '(-1 0 1))
          (dolist (,dj '(-1 0 1))
            (dolist (,dk '(-1 0 1))
              (for-neighbors-in-cell ,nbr (+ ,i ,di) (+ ,j ,dj) (+ ,k ,dk) ,var
                ,@body)))))))
-|#
-
-(defmacro for-neighbors (nbr pos var &rest body)
-  (match pos
-    ((x y z) (with-gensyms (i j k)
-               `(multiple-value-bind (,i ,j ,k)
-                    (neighbor-map-pos-to-index% ,nbr ,x ,y ,z)
-                  (for-neighbors% ,nbr ,i ,j ,k ,var ,@body))))
-    ((xs idx) (with-gensyms (i j k)
-                `(multiple-value-bind (,i ,j ,k)
-                     (neighbor-map-pos-to-index ,nbr ,xs ,idx)
-                   (for-neighbors% ,nbr ,i ,j ,k ,var ,@body))))
-    ((val) (with-gensyms (x y z)
-             `(multiple-value-bind (,x ,y ,z)
-                  (mini-lang::vec3* ,val)
-                (for-neighbors ,nbr ,x ,y ,z ,var ,@body))))))
-
-(defmacro for-neighbors% (nbr i j k var &rest body)
-  (with-gensyms (di dj dk)
-    `(dolist (,di '(-1 0 1))
-       (dolist (,dj '(-1 0 1))
-         (dolist (,dk '(-1 0 1))
-           (for-neighbors-in-cell ,nbr (+ ,i ,di) (+ ,j ,dj) (+ ,k ,dk) ,var
-             ,@body))))))
 
 
 ;;; Print functions
