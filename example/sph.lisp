@@ -152,7 +152,7 @@
 (defun update-neighbor-map (nbr xs)
   (clear-neighbor-map nbr)
   (for-vec3-array xs i
-    (insert-particle nbr *x* i)))
+    (insert-particle nbr xs i)))
 
 (defmacro for-neighbors-in-cell (nbr i j k var &rest body)
   `(dolist (,var (neighbor-map-particles ,nbr ,i ,j ,k))
