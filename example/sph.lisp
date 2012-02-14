@@ -258,14 +258,17 @@
            (- (scalar h) r))
         0d0)))
 
-(defun update-density ()
+(defun update-density (x rho nbr)
   (declare (optimize (speed 3) (safety 0)))
-  (for-scalar-array *rho* i
+  (declare (type vec3-array x)
+           (type scalar-array rho)
+           (type neighbor-map nbr))
+  (for-scalar-array rho i
     (setf-scalar-array *rho* i 0d0)
-    (for-neighbors *nbr* (*x* i) j
-      (incf-scalar-array *rho* i
-        (let ((dr vec3 (* (- (vec3-aref *x* i)
-                             (vec3-aref *x* j))
+    (for-neighbors nbr (x i) j
+      (incf-scalar-array rho i
+        (let ((dr vec3 (* (- (vec3-aref x i)
+                             (vec3-aref x j))
                           (scalar simscale))))
           (* (scalar pmass) (poly6-kernel dr)))))))
 
@@ -279,26 +282,28 @@
 (define-function pressure-term ()
   (let ((dr vec3 (* (- (vec3-aref x i) (vec3-aref x j))
                     (scalar simscale))))
-    (* (* (- (scalar pmass)) (/ (+ (scalar-aref *prs* i) (scalar-aref *prs* j))
-                                (* 2d0 (scalar-aref *rho* j))))
+    (* (* (- (scalar pmass)) (/ (+ (scalar-aref prs i) (scalar-aref prs j))
+                                (* 2d0 (scalar-aref rho j))))
        (grad-spiky-kernel dr))))
 
 (define-function viscosity-term ()
   (let ((dr vec3 (* (- (vec3-aref x i) (vec3-aref x j))
                     (scalar simscale))))
     (* (* (scalar visc) (/ (* (scalar pmass)
-                              (- (vec3-aref *v* j) (vec3-aref *v* i)))
-                           (scalar-aref *rho* j)))
+                              (- (vec3-aref v j) (vec3-aref v i)))
+                           (scalar-aref rho j)))
        (rap-visc-kernel dr))))
 
-(defun update-force (x)
+(defun update-force (x v f rho prs nbr)
   (declare (optimize (speed 3) (safety 0)))
-  (declare (type vec3-array x))
-  (for-vec3-array *f* i
-    (setf-vec3-array *f* i (vec3 0d0 0d0 0d0))
-    (for-neighbors *nbr* (x i) j
+  (declare (type vec3-array x v f)
+           (type scalar-array rho prs)
+           (type neighbor-map nbr))
+  (for-vec3-array f i
+    (setf-vec3-array f i (vec3 0d0 0d0 0d0))
+    (for-neighbors nbr (x i) j
       (when (/= i j)
-        (incf-vec3-array *f* i
+        (incf-vec3-array f i
           (+ (pressure-term)
              (viscosity-term)))))))
 
@@ -376,12 +381,12 @@
   (print-number-of-particles)
   (initialize)
 ; (sb-sprof:with-profiling (:report :graph :loop nil)
-    (dotimes (i 300)
+    (dotimes (i 30)
       ; (output i)
       ; (print-step i)
       (update-neighbor-map *nbr* *x*)
-      (update-density)
+      (update-density *x* *rho* *nbr*)
       (update-pressure)
-      (update-force *x*)
+      (update-force *x* *v* *f* *rho* *prs* *nbr*)
       (update-velocity)
       (update-position)));)
