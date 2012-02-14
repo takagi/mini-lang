@@ -38,8 +38,10 @@
            :scalar-array-size
            :vec3                        ; vec3 and vec3 array
            :vec3-x :vec3-y :vec3-z
+           :with-vec3
            :make-vec3
            :vec3-array
+           :with-vec3-aref
            :make-vec3-array
            :vec3-aref
            :vec3-array-size
