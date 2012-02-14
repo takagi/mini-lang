@@ -203,6 +203,10 @@
   `(dotimes (,i (scalar-array-size ,x))
      ,@body))
 
+(defun for-scalar-array% (x fun)
+  (dotimes (i (scalar-array-size x))
+    (funcall fun i)))
+
 (defmacro setf-vec3 (var exp)
   (let ((type (type-of-mini-lang exp)))
     (if (eq type 'vec3)
