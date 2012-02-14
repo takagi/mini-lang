@@ -136,9 +136,18 @@
 
 (def-tuple-op vec3-scale*
   ((vec vec3 (x y z))
-   (k   double-float (k)))
+   (val double-float (val)))
   (:return vec3
-           (vec3-values* (* x k) (* y k) (* z k))))
+           ; When this def-tuple-op macro is expanded, val is specified
+           ; with symbol-macrolet so that this expression makes
+           ; val evaluated three times which causing poor performance.
+           ;
+           ;   (vec3-values* (* x val) (* y val) (* z val))))
+           ;
+           ; To avoid it, val is once bound to k and k is used instead of val
+           ; to make val evaluated only once.
+           (let ((k val))
+             (vec3-values* (* x k) (* y k) (* z k)))))
 
 (defmacro vec3-scale%* (k x)
   `(vec3-scale* ,x ,k))
