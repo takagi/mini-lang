@@ -99,19 +99,19 @@
 (is (mini-lang::external-environment-reference-p '(vec3-aref x i)) t)
 
 (is (mini-lang::compile-external-environment-reference '(bool x))
-    'x)
+    '(the boolean x))
 (is (mini-lang::compile-external-environment-reference '(int x))
-    `(the fixnum x))
+    `(the int x))
 (is (mini-lang::compile-external-environment-reference '(scalar x))
     '(the scalar x))
 (is (mini-lang::compile-external-environment-reference '(vec3 x))
-    '(mini-lang::vec3* x))
+    '(mini-lang::vec3* (the vec3 x)))
 (is (mini-lang::compile-external-environment-reference '(vec3 x y z))
-    '(mini-lang::vec3-values* x y z))
+    '(mini-lang::vec3-values* (the scalar x) (the scalar y) (the scalar z)))
 (is (mini-lang::compile-external-environment-reference '(scalar-aref x i))
-    '(scalar-aref x i))
+    '(scalar-aref (the scalar-array x) i))
 (is (mini-lang::compile-external-environment-reference '(vec3-aref x i))
-    '(mini-lang::vec3-aref* x i))
+    '(mini-lang::vec3-aref* (the vec3-array x) i))
 
 
 ;;; test let expression
