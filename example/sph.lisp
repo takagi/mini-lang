@@ -136,6 +136,7 @@
            (k (index (vec3-z min) z delta)))
       (values i j k))))
 
+(declaim (inline insert-particle))
 (defun insert-particle (nbr x y z idx)
   (multiple-value-bind (i j k) (neighbor-map-pos-to-index nbr x y z)
     (when (neighbor-map-valid-index nbr i j k)
@@ -149,7 +150,7 @@
 
 (defmacro for-neighbors-in-cell (nbr i j k var &rest body)
   `(dolist (,var (neighbor-map-particles ,nbr ,i ,j ,k))
-     (declare (type (signed-byte 32) ,var))
+     (declare (type (unsigned-byte 32) ,var))
      ,@body))
 
 (defmacro for-neighbors (nbr pos var &rest body)
@@ -264,7 +265,7 @@
            (type scalar-array rho)
            (type neighbor-map nbr))
   (for-scalar-array rho i
-    (setf-scalar-array *rho* i 0d0)
+    (setf-scalar-array rho i 0d0)
     (for-neighbors nbr (x i) j
       (incf-scalar-array rho i
         (let ((dr vec3 (* (- (vec3-aref x i)
@@ -296,9 +297,7 @@
 
 (defun update-force (x v f rho prs nbr)
   (declare (optimize (speed 3) (safety 0)))
-  (declare (type vec3-array x v f)
-           (type scalar-array rho prs)
-           (type neighbor-map nbr))
+  (declare (type vec3-array x))
   (for-vec3-array f i
     (setf-vec3-array f i (vec3 0d0 0d0 0d0))
     (for-neighbors nbr (x i) j
@@ -377,11 +376,11 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (require :sb-sprof))
 
-(defun main ()
+(defun main (max-loop)
   (print-number-of-particles)
   (initialize)
 ; (sb-sprof:with-profiling (:report :graph :loop nil)
-    (dotimes (i 30)
+    (dotimes (i max-loop)
       ; (output i)
       ; (print-step i)
       (update-neighbor-map *nbr* *x*)
@@ -390,3 +389,16 @@
       (update-force *x* *v* *f* *rho* *prs* *nbr*)
       (update-velocity)
       (update-position)));)
+
+(defun profile ()
+  (sb-profile:reset)
+  (sb-profile:profile main
+                      update-neighbor-map
+                      clear-neighbor-map
+                      update-density
+                      update-pressure
+                      update-force
+                      update-velocity
+                      update-position)
+  (main 30)
+  (sb-profile:report))
