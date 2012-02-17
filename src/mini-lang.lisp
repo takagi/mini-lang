@@ -7,7 +7,7 @@
 (defpackage mini-lang
   (:use :cl
         :cl-pattern
-        :cl-tuples
+        :cl-tuples-wrapper
         :anaphora
         :alexandria)
   (:export :compile-mini-lang
@@ -101,28 +101,12 @@
     :initial-element 0d0
     :elements (x y z))
 
-(defmacro vec3-x (x) `(aref ,x 0))
-(defmacro vec3-y (x) `(aref ,x 1))
-(defmacro vec3-z (x) `(aref ,x 2))
-
 (declaim (ftype (function (vec3-array) fixnum) vec3-array-size))
 (defun vec3-array-size (x)
   (vec3-array-dimensions x))
 
 (defmacro vec3-negate* (x)
   `(vec3-scale* ,x -1d0))
-
-(def-tuple-op vec3-x*
-  ((vec vec3 (x y z)))
-  (:return scalar x))
-
-(def-tuple-op vec3-y*
-  ((vec vec3 (x y z)))
-  (:return scalar y))
-
-(def-tuple-op vec3-z*
-  ((vec vec3 (x y z)))
-  (:return scalar z))
 
 (def-tuple-op vec3-add*
   ((veca vec3 (x1 y1 z1))
