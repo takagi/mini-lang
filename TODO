@@ -1,5 +1,6 @@
 ;;;
 ;;; ToDo:
+;;; * add an interface to define parameters which can be used in mini-lang expressions to avoid verbose external environment references
 ;;; * add vec3 operations (vec3-x, vec3-+ and so on)
 ;;; * add descriptions to the tests
 ;;; * add quote functionality that enables using external common lisp expressions
