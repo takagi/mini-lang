@@ -15,152 +15,176 @@
 
 ;;; test operation interfaces
 
-(is-expand (setf-scalar x 1d0) (setf x (compile-mini-lang 1d0)))
+(is-expand (setf-scalar x 1d0) (setf x (compile-mini-lang 1d0)) "setf-scalar")
 (is-expand (setf-scalar-array x i 1d0)
-           (setf (scalar-aref x i) (compile-mini-lang 1d0)))
+           (setf (scalar-aref x i) (compile-mini-lang 1d0))
+           "setf-scalar-array")
 
-(is-expand (incf-scalar x 1d0) (setf-scalar x (+ x 1d0)))
+(is-expand (incf-scalar x 1d0) (setf-scalar x (+ x 1d0)) "incf-scalar")
 (is-expand (incf-scalar-array x i 1d0)
-           (setf-scalar-array x i (+ (scalar-aref x i) 1d0)))
+           (setf-scalar-array x i (+ (scalar-aref x i) 1d0))
+           "incf-scalar-array")
 
 (is-expand (setf-vec3 x (1d0 1d0 1d0))
            (setf (mini-lang::vec3* x)
-                 (compile-mini-lang (1d0 1d0 1d0))))
+                 (compile-mini-lang (1d0 1d0 1d0)))
+           "setf-vec3")
 (is-expand (setf-vec3-array x i (1d0 1d0 1d0))
            (setf (mini-lang::vec3-aref* x i)
-                 (compile-mini-lang (1d0 1d0 1d0))))
+                 (compile-mini-lang (1d0 1d0 1d0)))
+           "setf-vec3-array")
 
-(is-expand (incf-vec3 x (1d0 1d0 1d0)) (setf-vec3 x (+ x (1d0 1d0 1d0))))
+(is-expand (incf-vec3 x (1d0 1d0 1d0)) (setf-vec3 x (+ x (1d0 1d0 1d0)))
+           "incf-vec3")
 (is-expand (incf-vec3-array x i (1d0 1d0 1d0))
-           (setf-vec3-array x i (+ (1d0 1d0 1d0) (vec3-aref x i))))
+           (setf-vec3-array x i (+ (1d0 1d0 1d0) (vec3-aref x i)))
+           "incf-vec3-array")
 
 (is-expand (for-scalar-array x i
              (setf-scalar-array x i 1d0))
            (dotimes (i (scalar-array-size x))
-             (setf-scalar-array x i 1d0)))
+             (setf-scalar-array x i 1d0))
+           "for-scalar-array and setf-scalar-array")
 
 (is-expand (for-vec3-array x i
              (setf-vec3-array x i (1d0 1d0 1d0)))
            (dotimes (i (vec3-array-size x))
-             (setf-vec3-array x i (1d0 1d0 1d0))))
+             (setf-vec3-array x i (1d0 1d0 1d0)))
+           "for-vec3-array and setf-vec3-array")
 
 (is (let ((x (make-scalar-array 1)))
       (for-scalar-array x i
         (setf-scalar-array x i 1d0)
         (incf-scalar-array x i 1d0))
       (scalar-aref x 0))
-    2d0)
+    2d0 "incf-scalar-array")
 
 (is (let ((x (make-vec3-array 1)))
       (for-vec3-array x i
         (setf-vec3-array x i (1d0 1d0 1d0))
         (incf-vec3-array x i (1d0 1d0 1d0)))
       (mini-lang::vec3-aref* x 0))
-    (mini-lang::vec3-values* 2d0 2d0 2d0))
+    (mini-lang::vec3-values* 2d0 2d0 2d0) "incf-vec3-array")
 
 
 ;;; test compile-exp
 
-(is (mini-lang::compile-exp 1d0 nil) 1d0)
+(is (mini-lang::compile-exp 1d0 nil) 1d0 "compile-exp 1")
 (is (mini-lang::compile-exp '(1d0 1d0 1d0) nil)
-    '(mini-lang::vec3-values* 1d0 1d0 1d0))
+    '(mini-lang::vec3-values* 1d0 1d0 1d0)
+    "compile-exp 2")
 
 
 ;;; test literal
 
-(is (mini-lang::bool-literal-p 't) t)
-(is (mini-lang::bool-literal-p 'nil) t)
+(is (mini-lang::bool-literal-p 't) t "bool-literal-p 1")
+(is (mini-lang::bool-literal-p 'nil) t "bool-literal-p 2")
 
-(is (mini-lang::int-literal-p 1) t)
+(is (mini-lang::int-literal-p 1) t "int-literal-p")
 
-(is (mini-lang::scalar-literal-p '1d0) t)
+(is (mini-lang::scalar-literal-p '1d0) t "scalar-literal-p")
 
-(is (mini-lang::vec3-literal-p '(1d0 1d0 1d0)) t)
+(is (mini-lang::vec3-literal-p '(1d0 1d0 1d0)) t "vec3-literal-p")
 (is (mini-lang::compile-vec3-literal '(1d0 1d0 1d0))
-    '(mini-lang::vec3-values* 1d0 1d0 1d0))
+    '(mini-lang::vec3-values* 1d0 1d0 1d0)
+    "compile-vec3-literal")
 
 
 ;;; test external environment reference
 
-(is (mini-lang::external-environment-reference-p '(bool x)) t)
-(is (mini-lang::external-environment-reference-p '(int x)) t)
-(is (mini-lang::external-environment-reference-p '(scalar x)) t)
-(is (mini-lang::external-environment-reference-p '(scalar x y)) nil)
-(is (mini-lang::external-environment-reference-p '(vec3 x)) t)
-(is (mini-lang::external-environment-reference-p '(vec3 x y z)) t)
-(is (mini-lang::external-environment-reference-p '(scalar-aref x i)) t)
-(is (mini-lang::external-environment-reference-p '(vec3-aref x i)) t)
+(is (mini-lang::external-environment-reference-p '(bool x)) t
+    "external-environment-reference-p 1")
+(is (mini-lang::external-environment-reference-p '(int x)) t
+    "external-environment-reference-p 2")
+(is (mini-lang::external-environment-reference-p '(scalar x)) t
+    "external-environment-reference-p 3")
+(is (mini-lang::external-environment-reference-p '(scalar x y)) nil
+    "external-environment-reference-p 4")
+(is (mini-lang::external-environment-reference-p '(vec3 x)) t
+    "external-environment-reference-p 5")
+(is (mini-lang::external-environment-reference-p '(vec3 x y z)) t
+    "external-environment-reference-p 6")
+(is (mini-lang::external-environment-reference-p '(scalar-aref x i)) t
+    "external-environment-reference-p 7")
+(is (mini-lang::external-environment-reference-p '(vec3-aref x i)) t
+    "external-environment-reference-p 8")
 
 (is (mini-lang::compile-external-environment-reference '(bool x))
-    'x)
+    'x "compile-external-environment-reference 1")
 (is (mini-lang::compile-external-environment-reference '(int x))
-    `(the int x))
+    `(the int x) "compile-external-environment-reference 2")
 (is (mini-lang::compile-external-environment-reference '(scalar x))
-    '(the scalar x))
+    '(the scalar x) "compile-external-environment-reference 3")
 (is (mini-lang::compile-external-environment-reference '(vec3 x))
-    '(mini-lang::vec3* x))
+    '(mini-lang::vec3* x) "compile-external-environment-reference 4")
 (is (mini-lang::compile-external-environment-reference '(vec3 x y z))
-    '(mini-lang::vec3-values* x y z))
+    '(mini-lang::vec3-values* x y z) "compile-external-environment-reference 5")
 (is (mini-lang::compile-external-environment-reference '(scalar-aref x i))
-    '(scalar-aref x i))
+    '(scalar-aref x i) "compile-external-environment-reference 6")
 (is (mini-lang::compile-external-environment-reference '(vec3-aref x i))
-    '(mini-lang::vec3-aref* x i))
+    '(mini-lang::vec3-aref* x i) "compile-external-environment-reference 7")
 
 
 ;;; test let expression
 
-(is (mini-lang::let-p '(let)) t)
-(is (mini-lang::let-binds '(let ((x scalar 1d0)) x)) '((x scalar 1d0)))
-(is (mini-lang::let-exp '(let ((x scalar 1d0)) x)) 'x)
+(is (mini-lang::let-p '(let)) t "let-p")
+(is (mini-lang::let-binds '(let ((x scalar 1d0)) x)) '((x scalar 1d0))
+    "let-binds")
+(is (mini-lang::let-exp '(let ((x scalar 1d0)) x)) 'x "let-exp")
 
 (is (mini-lang::compile-let% '((x bool t)) '1d0 nil)
-    '(let ((x t)) 1d0))
+    '(let ((x t)) 1d0) "compile-let% 1")
 (is (mini-lang::compile-let% '((x int 1)) 1 nil)
-    `(let ((x 1)) 1))
+    `(let ((x 1)) 1) "compile-let% 2")
 (is (mini-lang::compile-let% '((x scalar 1d0)) '1d0 nil)
-    '(let ((x 1d0)) 1d0))
+    '(let ((x 1d0)) 1d0) "compile-let% 3")
 (is (mini-lang::compile-let% '((x vec3 (1d0 1d0 1d0))) '1d0 nil)
     '(multiple-value-bind (x0 x1 x2) (mini-lang::vec3-values* 1d0 1d0 1d0)
-       1d0))
+       1d0) "compile-let% 4")
 
-(is-error (mini-lang::compile-let% '((x bool 1d0)) 'x nil) simple-error)
-(is-error (mini-lang::compile-let% '((x int 1d0)) 'x nil) simple-error)
-(is-error (mini-lang::compile-let% '((x scalar t)) 'x nil) simple-error)
-(is-error (mini-lang::compile-let% '((x vec3 1d0)) 'x nil) simple-error)
+(is-error (mini-lang::compile-let% '((x bool 1d0)) 'x nil) simple-error
+          "compile-let% 5")
+(is-error (mini-lang::compile-let% '((x int 1d0)) 'x nil) simple-error
+          "compile-let% 6")
+(is-error (mini-lang::compile-let% '((x scalar t)) 'x nil) simple-error
+          "compile-let% 7")
+(is-error (mini-lang::compile-let% '((x vec3 1d0)) 'x nil) simple-error
+          "compile-let% 8")
 
 (is (mini-lang::compile-let% '((x bool t)) 'x nil)
-    '(let ((x t)) x))
+    '(let ((x t)) x) "compile-let% 9")
 (is (mini-lang::compile-let% '((x int 1)) 'x nil)
-    '(let ((x 1)) x))
+    '(let ((x 1)) x) "compile-let% 10")
 (is (mini-lang::compile-let% '((x scalar 1d0)) 'x nil)
-    '(let ((x 1d0)) x))
+    '(let ((x 1d0)) x) "compile-let% 11")
 (is (mini-lang::compile-let% '((x vec3 (1d0 1d0 1d0))) 'x nil)
     '(multiple-value-bind (x0 x1 x2) (mini-lang::vec3-values* 1d0 1d0 1d0)
-       (mini-lang::vec3-values* x0 x1 x2)))
+       (mini-lang::vec3-values* x0 x1 x2)) "compile-let% 12")
 
 (is (mini-lang::compile-let '(let ((x bool t)) x) nil)
-    '(let ((x t)) x))
+    '(let ((x t)) x) "compile-let 1")
 (is (mini-lang::compile-let '(let ((x int 1)) x) nil)
-    '(let ((x 1)) x))
+    '(let ((x 1)) x) "compile-let 2")
 (is (mini-lang::compile-let '(let ((x scalar 1d0)) x) nil)
-    '(let ((x 1d0)) x))
+    '(let ((x 1d0)) x) "compile-let 3")
 (is (mini-lang::compile-let '(let ((x vec3 (1d0 1d0 1d0))) x) nil)
     '(multiple-value-bind (x0 x1 x2) (mini-lang::vec3-values* 1d0 1d0 1d0)
-       (mini-lang::vec3-values* x0 x1 x2)))
+       (mini-lang::vec3-values* x0 x1 x2)) "compile-let 4")
 (is (mini-lang::compile-let '(let ((y scalar 1d0))
                                (let ((x vec3 (1d0 1d0 1d0)))
                                  y)) nil)
     '(let ((y 1d0))
        (multiple-value-bind (x0 x1 x2) (mini-lang::vec3-values* 1d0 1d0 1d0)
-         y)))
+         y))
+    "compile-let 5")
 
 
 ;;; test if expression
 
-(is (mini-lang::if-p '(if t 2d0 1d0)) t)
+(is (mini-lang::if-p '(if t 2d0 1d0)) t "if-p")
 
 (is (mini-lang::compile-if '(if t 2d0 1d0) nil)
-    `(if t 2d0 1d0))
+    `(if t 2d0 1d0) "compile-if")
 
 
 ;;; test variable
