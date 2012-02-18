@@ -297,7 +297,6 @@
 
 (defun update-force (x v f rho prs nbr)
   (declare (optimize (speed 3) (safety 0)))
-  (declare (type vec3-array x))
   (for-vec3-array f i
     (setf-vec3-array f i (vec3 0d0 0d0 0d0))
     (for-neighbors nbr (x i) j

@@ -65,6 +65,7 @@
           (destructuring-bind (op . rest) exp
             `(,op ,@(mapcar #'binarize rest))))))
 
+
 ;;; definition of bool
 
 (deftype bool () 'boolean)
@@ -99,7 +100,8 @@
 (def-tuple-type vec3
     :tuple-element-type double-float
     :initial-element 0d0
-    :elements (x y z))
+    :elements (x y z)
+    :simple-array t)
 
 (declaim (ftype (function (vec3-array) fixnum) vec3-array-size))
 (defun vec3-array-size (x)
