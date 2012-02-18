@@ -285,7 +285,7 @@
 (defun compile-external-environment-reference (exp)
   (match exp
     (('bool x) x)
-    (('int x) `(the fixnum ,x))
+    (('int x) `(the int ,x))
     (('scalar x) `(the scalar ,x))
     (('vec3 x) `(vec3* ,x))
     (('vec3 x y z) `(vec3-values* ,x ,y ,z))

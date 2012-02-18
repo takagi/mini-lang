@@ -261,9 +261,6 @@
 
 (defun update-density (x rho nbr)
   (declare (optimize (speed 3) (safety 0)))
-  (declare (type vec3-array x)
-           (type scalar-array rho)
-           (type neighbor-map nbr))
   (for-scalar-array rho i
     (setf-scalar-array rho i 0d0)
     (for-neighbors nbr (x i) j
@@ -360,7 +357,6 @@
 
 (defun update-velocity ()
   (declare (optimize (speed 3) (safety 0)))
-  (declare (type vec3 g box-min box-max))
   (for-vec3-array *v* i
     (incf-vec3-array *v* i
       (let ((a vec3 (+ (/ (vec3-aref *f* i) (scalar-aref *rho* i)) (vec3 g))))
