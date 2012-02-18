@@ -15,13 +15,6 @@
 
 ;;; test operation interfaces
 
-(is-expand (defvar-scalar-array x y) (progn (declaim (type scalar-array x y))
-                                            (defvar x)
-                                            (defvar y)))
-(is-expand (defvar-vec3-array x y) (progn (declaim (type vec3-array x y))
-                                          (defvar x)
-                                          (defvar y)))
-
 (is-expand (setf-scalar x 1d0) (setf x (compile-mini-lang 1d0)))
 (is-expand (setf-scalar-array x i 1d0)
            (setf (scalar-aref x i) (compile-mini-lang 1d0)))
@@ -99,19 +92,19 @@
 (is (mini-lang::external-environment-reference-p '(vec3-aref x i)) t)
 
 (is (mini-lang::compile-external-environment-reference '(bool x))
-    '(the boolean x))
+    'x)
 (is (mini-lang::compile-external-environment-reference '(int x))
     `(the int x))
 (is (mini-lang::compile-external-environment-reference '(scalar x))
     '(the scalar x))
 (is (mini-lang::compile-external-environment-reference '(vec3 x))
-    '(mini-lang::vec3* (the vec3 x)))
+    '(mini-lang::vec3* x))
 (is (mini-lang::compile-external-environment-reference '(vec3 x y z))
-    '(mini-lang::vec3-values* (the scalar x) (the scalar y) (the scalar z)))
+    '(mini-lang::vec3-values* x y z))
 (is (mini-lang::compile-external-environment-reference '(scalar-aref x i))
-    '(scalar-aref (the scalar-array x) i))
+    '(scalar-aref x i))
 (is (mini-lang::compile-external-environment-reference '(vec3-aref x i))
-    '(mini-lang::vec3-aref* (the vec3-array x) i))
+    '(mini-lang::vec3-aref* x i))
 
 
 ;;; test let expression

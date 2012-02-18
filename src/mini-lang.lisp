@@ -21,11 +21,9 @@
            :incf-scalar
            :setf-vec3
            :incf-vec3
-           :defvar-scalar-array         ; operation interfaces for arrays
-           :for-scalar-array
+           :for-scalar-array            ; operation interfaces for arrays
            :setf-scalar-array
            :incf-scalar-array
-           :defvar-vec3-array
            :for-vec3-array
            :setf-vec3-array
            :incf-vec3-array
@@ -85,7 +83,7 @@
   (make-array n :element-type 'double-float :initial-element 0d0))
 
 (defmacro scalar-aref (x i)
-  `(aref ,x ,i))
+  `(aref (the scalar-array ,x) ,i))
 
 (declaim (ftype (function (scalar-array) fixnum) scalar-array-size))
 (defun scalar-array-size (x)
@@ -156,16 +154,6 @@
 
 
 ;;; operation interface
-
-(defmacro defvar-scalar-array (&rest rest)
-  `(progn (declaim (type scalar-array ,@rest))
-          ,@(mapcar (lambda (x)
-                      `(defvar ,x)) rest)))
-
-(defmacro defvar-vec3-array (&rest rest)
-  `(progn (declaim (type vec3-array ,@rest))
-          ,@(mapcar (lambda (x)
-                      `(defvar ,x)) rest)))
 
 (defmacro setf-scalar (var exp)
   (let ((type (type-of-mini-lang exp)))
@@ -289,7 +277,7 @@
     (('scalar x) `(the scalar ,x))
     (('vec3 x) `(vec3* ,x))
     (('vec3 x y z) `(vec3-values* ,x ,y ,z))
-    (('scalar-aref x i) `(scalar-aref (the scalar-array ,x) ,i))
+    (('scalar-aref x i) `(scalar-aref ,x ,i))
     (('vec3-aref x i) `(vec3-aref* ,x ,i))))
 
 
