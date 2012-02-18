@@ -39,15 +39,17 @@
 (defvar init-min (make-vec3 0d0 0d0 -10d0))  ; constant
 
 
-;;; Arrays
+;;; Grobal variables
 
-(defvar-vec3-array *x* *v* *f*)
-(defvar-scalar-array *rho* *prs*)
+(defvar *x*)
+(defvar *v*)
+(defvar *f*)
+(defvar *rho*)
+(defvar *prs*)
+(defvar *nbr*)
 
 
 ;;; Neighbor map
-
-(defvar *nbr*)
 
 (defstruct (neighbor-map
              (:constructor make-raw-neighbor-map

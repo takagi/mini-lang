@@ -10,7 +10,8 @@
   (:export :main))
 (in-package :mini-lang-example.diffuse)
 
-(defvar-scalar-array *f* *fn*)
+(defvar *f*)
+(defvar *fn*)
 (defvar *NX* 256)
 (defvar *NY* 256)
 
