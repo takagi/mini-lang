@@ -253,6 +253,10 @@
 (is-error (mini-lang::compile-user-defined-application '(f 1d0) nil)
           simple-error "compile-user-defined-application 5")
 
+(is-error (macroexpand-1 '(define-function f ()
+                           (+ x (1d0 1d0 1d0))))
+          simple-error "define-function")
+
 
 ;;; test application of built-in functions
 
