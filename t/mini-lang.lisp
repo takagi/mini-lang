@@ -257,6 +257,26 @@
                            (+ x (1d0 1d0 1d0))))
           simple-error "define-function")
 
+(define-function f ((scalar x))
+  x)
+(is (mini-lang::compile-exp '(let ((x scalar 1d0))
+                              (+ x (f x))) nil)
+    '(let ((x0 1.0d0))
+      (+ x0 (let ((x1 x0))
+              x1)))
+    "lexical scoping 1")
+
+(define-function f ((scalar x))
+  (let ((x scalar x))
+    x))
+(is (mini-lang::compile-exp '(let ((x scalar 1d0))
+                              (+ x (f x))) nil)
+    '(let ((x0 1d0))
+      (+ x0 (let ((x1 x0))
+              (let ((x2 x1))
+                x2))))
+    "lexical scoping 2")
+
 
 ;;; test application of built-in functions
 
