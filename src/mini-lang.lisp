@@ -334,7 +334,6 @@
           (let ((type-env2 (add-type-environment var 'vec3 type-env)))
             (multiple-value-bind (x y z) (make-symbols-for-values var)
               `(multiple-value-bind (,x ,y ,z) ,(compile-exp val type-env)
-;                 (declare (ignorable ,x ,y ,z))
                  ,(compile-let% rest exp type-env2))))
           (error (format nil "contradict type in let bind: ~A" var))))))
 
@@ -631,7 +630,7 @@
 
 ;;; type environment
 
-;; env ::= ((<variable> . <type>)*)
+;; type-env ::= ( (<variable> . <type>)* )
 
 (defun empty-type-environment ()
   '())
