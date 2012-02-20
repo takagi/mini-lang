@@ -412,10 +412,10 @@
              ',name))
         (error (format nil "invalid function definition: (define-function ~A ~A ~A)" name args exp)))))
 
-(defun user-function-args (fun)
+(defun user-defined-function-args (fun)
   (car (getf *user-defined-functions* fun)))
 
-(defun user-function-exp (fun)
+(defun user-defined-function-exp (fun)
   (cadr (getf *user-defined-functions* fun)))
 
 (defun user-defined-application-p (exp)
@@ -432,10 +432,10 @@
   (labels ((binding (var val)
              (match var
                ((type v) (list v type val)))))
-    (let ((vars (user-function-args fun)))
+    (let ((vars (user-defined-function-args fun)))
       (if (= (length vars) (length vals))
           `(let (,@(mapcar #'binding vars vals))
-             ,(user-function-exp fun))
+             ,(user-defined-function-exp fun))
           (error (format nil "invalid number of arguments: ~A" exp))))))
 
 
