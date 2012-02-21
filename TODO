@@ -1,7 +1,6 @@
 ;;;
 ;;; ToDo:
 ;;; * add no recursion check in define-function because mini-lang does not permit recursion
-;;; * explicitly implement lexical scoping independent of inferior common lisp's one
 ;;; * add an interface to define parameters which can be used in mini-lang expressions to avoid verbose external environment references
 ;;; * add vec3 operations (vec3-x, vec3-+ and so on)
 ;;; * add descriptions to the tests
@@ -9,6 +8,7 @@
 ;;; * add type specification to output of compile-variable
 ;;;
 ;;; Done:
+;;; * explicitly implement lexical scoping independent of inferior common lisp's one
 ;;; * add sph example
 ;;; * add diffusion simulation example
 ;;; * add int type and its operations
