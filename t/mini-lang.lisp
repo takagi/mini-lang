@@ -214,12 +214,60 @@
   (is c 'x2 "make-symbols-for-values 3"))
 
 
-;;; test definition and application of user defined functions
+;;; test user-defined function
+
+(mini-lang::reset-unique-variables-counter)
+(is (mini-lang::make-unique-variable 'x 'bool) 'x1 "make-unique-variable 1")
+(is (mini-lang::make-unique-variable 'x 'int) 'x2 "make-unique-variable 2")
+(is (mini-lang::make-unique-variable 'x 'scalar) 'x3 "make-unique-variable 3")
+(is (mini-lang::make-unique-variable 'x 'vec3) '(x4 x5 x6) "make-unique-variable 4")
+
+(mini-lang::reset-unique-variables-counter)
+(is (mini-lang::make-user-defined-function-args '(x y) '(scalar vec3)
+                                                '(x1 (y2 y3 y4)))
+    '((x scalar x1) (y vec3 (y2 y3 y4))) "make-user-defined-function-args")
+
+(is (mini-lang::make-user-defined-function-type-environment
+     '((scalar x) (vec3 y)))
+    '((y . vec3) (x . scalar)) "make-user-defined-function-type-environment")
+
+(mini-lang::reset-unique-variables-counter)
+(define-function f ((scalar x))
+  (+ x 1d0 2d0))
+(is (mini-lang::user-defined-function-name 'f) 'f "user-defined-function-name")
+(is (mini-lang::user-defined-function-args 'f)
+    '((x scalar x1)) "user-defined-function-args")
+(is (mini-lang::user-defined-function-return-type 'f)
+    'scalar "user-defined-function-return-type")
+(is (mini-lang::user-defined-function-compiled-expression 'f)
+    '(+ (+ x1 1d0) 2d0) "user-defined-function-compiled-expression")
+
+(mini-lang::reset-unique-variables-counter)
+(define-function g ((scalar x) (vec3 y))
+  (* x y))
+(is (mini-lang::user-defined-function-name 'g) 'g "user-defined-function-name")
+(is (mini-lang::user-defined-function-args 'g)
+    '((x scalar x1) (y vec3 (y2 y3 y4))) "user-defined-function-args")
+(is (mini-lang::user-defined-function-return-type 'g)
+    'vec3 "user-defined-function-return-type")
+(is (mini-lang::user-defined-function-compiled-expression 'g)
+    '(mini-lang::vec3-scale* x1 (mini-lang::vec3-values* y2 y3 y4))
+    "user-defined-funciton-compiled-expression")
+
+(let ((arg (car (mini-lang::user-defined-function-args 'f))))
+  (is (mini-lang::user-defined-function-arg-var arg)
+      'x "user-defined-function-arg-var")
+  (is (mini-lang::user-defined-function-arg-type arg)
+      'scalar "user-defined-function-arg-type")
+  (is (mini-lang::user-defined-function-arg-unique-vars arg)
+      'x1 "user-defined-function-arg-unique-vars"))
+
+
+;;; test define-function and defined function's application
 
 (clear-functions)
 
-(define-function f () 1d0)
-
+(mini-lang::reset-unique-variables-counter)
 (define-function f ((scalar x))
   (+ x 1d0))
 (is-error (macroexpand '(define-function f x (+ x 1d0))) simple-error
@@ -231,59 +279,70 @@
 (is (mini-lang::user-defined-application-p '(f2 1d0)) nil
     "user-defined-aplication-p 2")
 (is (mini-lang::compile-user-defined-application '(f 1d0) *empty-type-env*)
-    '(let ((x 1d0))
-       (+ x 1d0)) "compile-user-defined-application 1")
+    '(let ((x1 1d0))
+       (+ x1 1d0)) "compile-user-defined-application 1")
 (is-error (mini-lang::compile-user-defined-application '(f 1d0 1d0)
                                                        *empty-type-env*)
           simple-error "compile-user-defined-application 2")
 
+(mini-lang::reset-unique-variables-counter)
 (define-function g ((scalar x) (scalar y))
   (+ x y 1d0))
 (is (mini-lang::user-defined-application-p '(g 1d0 1d0)) t
     "user-defined-application-p 3")
 (is (mini-lang::compile-user-defined-application '(g 1d0 1d0) *empty-type-env*)
-    '(let ((x 1d0))
-      (let ((y 1d0))
-        (+ (+ x y) 1d0))) "compile-user-defined-application 3")
+    '(let ((x1 1d0))
+      (let ((y2 1d0))
+        (+ (+ x1 y2) 1d0))) "compile-user-defined-application 3")
 
+(mini-lang::reset-unique-variables-counter)
 (define-function f ((vec3 x))  ; test redefinition of f
   (+ x (1d0 1d0 1d0)))
 (is (mini-lang::user-defined-application-p '(f (1d0 1d0 1d0))) t
     "user-defined-application-p 4")
 (is (mini-lang::compile-user-defined-application '(f (1d0 1d0 1d0))
                                                  *empty-type-env*)
-    '(multiple-value-bind (x0 x1 x2) (mini-lang::vec3-values* 1d0 1d0 1d0)
-       (mini-lang::vec3-add* (mini-lang::vec3-values* x0 x1 x2)
+    '(multiple-value-bind (x1 x2 x3) (mini-lang::vec3-values* 1d0 1d0 1d0)
+       (mini-lang::vec3-add* (mini-lang::vec3-values* x1 x2 x3)
                              (mini-lang::vec3-values* 1d0 1d0 1d0)))
     "compile-user-defined-application 4")
 (is-error (mini-lang::compile-user-defined-application '(f 1d0)
                                                        *empty-type-env*)
           simple-error "compile-user-defined-application 5")
 
-(is-error (macroexpand-1 '(define-function f ()
-                           (+ x (1d0 1d0 1d0))))
-          simple-error "define-function")
+(is-error (define-function f (x) x)
+          simple-error "define-function 1")
+(is-error (define-function f ((x)) x)
+          simple-error "define-function 2")
+(is-error (define-function f ((x x)) x)
+          simple-error "define-function 3")
+(is-error (define-function f ((scalar x 1d0)) x)
+          simple-error "define-function 4")
+(is-error (define-function f () (+ x (1d0 1d0 1d0)))
+          simple-error "define-function 5")
 
+(mini-lang::reset-unique-variables-counter)
 (define-function f ((scalar x))
   x)
 (is (mini-lang::compile-exp '(let ((x scalar 1d0))
                               (+ x (f x)))
                             *empty-type-env*)
-    '(let ((x0 1.0d0))
-      (+ x0 (let ((x1 x0))
-              x1)))
+    '(let ((x1 1.0d0))
+      (+ x1 (let ((x2 x1))
+              x2)))
     "lexical scoping 1")
 
+(mini-lang::reset-unique-variables-counter)
 (define-function f ((scalar x))
   (let ((x scalar x))
     x))
 (is (mini-lang::compile-exp '(let ((x scalar 1d0))
                               (+ x (f x)))
                             *empty-type-env*)
-    '(let ((x0 1d0))
-      (+ x0 (let ((x1 x0))
-              (let ((x2 x1))
-                x2))))
+    '(let ((x1 1d0))
+      (+ x1 (let ((x2 x1))
+              (let ((x3 x2))
+                x3))))
     "lexical scoping 2")
 
 
@@ -296,9 +355,7 @@
 
 (is (mini-lang::compile-built-in-application '(+ 1d0 1d0) *empty-type-env*)
     '(+ 1d0 1d0) "compile-built-in-application 1")
-(is (let ((type-env (mini-lang::add-type-environment 'x 'scalar
-                      (mini-lang::add-type-environment 'y 'scalar
-                        *empty-type-env*))))
+(is (let ((type-env (mini-lang::make-type-environment '(x y) '(scalar scalar))))
       (mini-lang::compile-built-in-application '(+ x y) type-env))
     '(+ x y) "compile-built-in-application 2")
 (is (mini-lang::compile-built-in-application '(+ (1d0 1d0 1d0) (1d0 1d0 1d0))
@@ -306,9 +363,7 @@
     '(mini-lang::vec3-add* (mini-lang::vec3-values* 1d0 1d0 1d0)
                              (mini-lang::vec3-values* 1d0 1d0 1d0))
     "compile-built-in-application 3")
-(is (let ((type-env (mini-lang::add-type-environment 'x 'vec3
-                      (mini-lang::add-type-environment 'y 'vec3
-                        *empty-type-env*))))
+(is (let ((type-env (mini-lang::make-type-environment '(x y) '(vec3 vec3))))
       (mini-lang::compile-built-in-application '(+ x y) type-env))
     '(mini-lang::vec3-add* (mini-lang::vec3-values* x0 x1 x2)
                              (mini-lang::vec3-values* y0 y1 y2))
@@ -438,12 +493,11 @@
 (clear-functions)
 (define-function f ((scalar x))
   (+ x 1d0))
-(is (mini-lang::type-of-user-defined-application '(f 1d0) *empty-type-env*)
+(is (mini-lang::type-of-user-defined-application '(f 1d0))
     'scalar "type-of-user-defined-application 1")
 (define-function g ((vec3 x))
   (+ x (1d0 1d0 1d0)))
-(is (mini-lang::type-of-user-defined-application '(g (1d0 1d0 1d0))
-                                                 *empty-type-env*)
+(is (mini-lang::type-of-user-defined-application '(g (1d0 1d0 1d0)))
     'vec3 "type-of-user-defined-application 2")
 
 (is (mini-lang::type-of-built-in-application '(= 1 1) *empty-type-env*)
@@ -470,8 +524,34 @@
     '((x . scalar)) "add-type-environment")
 (is (mini-lang::lookup-type-environment 'x '((x . scalar))) 'scalar
     "lookup-type-environment 1")
-(is (mini-lang::lookup-type-environment 'x '()) nil
-    "lookup-type-environment 2")
+(is (mini-lang::lookup-type-environment 'x '(mini-lang::empty-type-environment))
+    nil "lookup-type-environment 2")
+(is (mini-lang::make-type-environment '(x y) '(scalar vec3))
+    '((y . vec3) (x . scalar)) "make-type-environment 1")
+(is (mini-lang::make-type-environment '(x y) '(scalar))
+    '((x . scalar)) "make-type-environment 2")
+(is (mini-lang::make-type-environment '(x) '(scalar vec3))
+    '((x . scalar)) "make-type-environment 3")
+
+
+;;; test variable environment
+
+(is (mini-lang::empty-variable-environment) '() "empty-variable-environment")
+(is (mini-lang::add-variable-environment
+     'x 'x1 (mini-lang::empty-variable-environment))
+    '((x . x1)) "add-variable-environment")
+(is (mini-lang::lookup-variable-environment 'x '((x . x1)))
+    'x1 "lookup-variable-environment 1")
+(is (mini-lang::lookup-variable-environment
+     'x (mini-lang::empty-variable-environment))
+    nil "lookup-variable-environment 2")
+(is (mini-lang::make-variable-environment '(x y) '(x1 (y2 y3 y4)))
+    '((y . (y2 y3 y4)) (x . x1)) "make-variable-environment 1")
+(is (mini-lang::make-variable-environment '(x y) '(x1))
+    '((x . x1)) "make-variable-environment 2")
+(is (mini-lang::make-variable-environment '(x) '(x1 (y2 y3 y4)))
+    '((x . x1)) "make-variable-environment 3")
+
 
 
 ;;; test utilities

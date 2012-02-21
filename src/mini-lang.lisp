@@ -379,44 +379,86 @@
 
 ;;; definition and application of user-defined functions
 
-;; *user-defined-functions*
-;; (<name> ((<args>) <exp>)
-;;  <name> ((<args>) <exp>) ...) where <args> ::= (<type> <var>)*
-;;
-;; e.g.
-;; (f (((scalar x)) (+ x 1d0))
-;;  g (((vec3 x) (vec3 y)) (+ x (+ y (1d0 1d0 1d0)))))
-;;
-
 (defvar *user-defined-functions* nil)
 
 (defun clear-functions ()
   (setf *user-defined-functions* nil))
 
 (defmacro define-function (name args exp)
-  (labels ((valid-arg (arg)
-             (and (consp arg) (= (length arg) 2)))
-           (type-env (args)
-             (reduce (lambda (env x)
-                       (match x
-                         ((type var) (add-type-environment var type env))))
-                     args :initial-value (empty-type-environment))))
-    (if (and (listp args)
-             (every #'valid-arg args))
-        (progn
-          ; provisional compilation for error finding
-          (compile-exp (binarize exp) (type-env args))
-          `(eval-when (:compile-toplevel :load-toplevel :execute)
-             (setf (getf *user-defined-functions* ',name)
-                   `(,',args ,',(binarize exp)))
-             ',name))
+  `(let ((func (make-user-defined-function ',name ',args ',exp)))
+     (eval-when (:compile-toplevel :load-toplevel :execute)
+       (setf (getf *user-defined-functions* ',name) func)
+       ',name)))
+
+
+;; <user-defined-functions> ::= ( <name> <user-defined-function>
+;;                                <name> <user-defined-function> ... )
+;; <user-defined-function>  ::= ( <args> <return-type> <compiled-expression>)
+;; <args>                   ::= ( <arg>* )
+;; <arg>                    ::= ( <var> <type> <unique-vars> )
+;; <unique-vars>            ::= <var>          if <type> is bool, int and scalar
+;;                            | ( <var> <var> <var> )  if <type> is vec3
+
+(defun make-user-defined-function (name args exp)
+  (labels ((valid-args (args)
+             (and (listp args)
+                  (every (lambda (arg)
+                           (and (consp arg) (= (length arg) 2)))
+                         args))))
+    (if (valid-args args)
+        (let* ((types (mapcar #'car args))
+               (vars (mapcar #'cadr args))
+               (unique-vars (mapcar #'make-unique-variable vars types)))
+          (let ((var-env (make-variable-environment vars unique-vars))
+                (type-env (make-type-environment vars types)))
+            (let ((arg2 (make-user-defined-function-args vars types
+                                                         unique-vars))
+                  (return-type (type-of-exp (binarize exp) type-env))
+                  (compile-expression (compile-exp (binarize exp)
+                                                   var-env type-env)))
+              (list name args2 return-type compiled-expression))))
         (error (format nil "invalid function definition: (define-function ~A ~A ~A)" name args exp)))))
 
-(defun user-defined-function-args (fun)
+(defun make-user-defined-function-args (vars types unique-vars)
+  (mapcar (lambda (var type unique-var)
+            (list var type unique-var))
+          vars types unique-vars))
+
+(let ((counter 0))
+  (defun make-unique-variable (var type)
+    (when (= counter most-positive-fixnum)
+      (reset-unique-variables-counter))
+    (case type
+      (bool (symbolicate var (princ-to-string (incf counter))))
+      (int (symbolicate var (princ-to-string (incf counter))))
+      (scalar (let ((n (incf counter)))
+                (symbolicate var (princ-to-string n))))
+      (vec3 (list (symbolicate var (princ-to-string (incf counter)))
+                   (symbolicate var (princ-to-string (incf counter)))
+                   (symbolicate var (princ-to-string (incf counter)))))))
+  (defun reset-unique-variables-counter ()
+    (setf counter 0)))
+
+(defun user-defined-function-name (fun)
   (car (getf *user-defined-functions* fun)))
 
-(defun user-defined-function-exp (fun)
+(defun user-defined-function-args (fun)
   (cadr (getf *user-defined-functions* fun)))
+
+(defun user-defined-function-return-type (fun)
+  (caddr (getf *user-defined-functions* fun)))
+
+(defun user-defined-function-compiled-expression (fun)
+  (cadddr (getf *user-defined-functions* fun)))
+
+(defun user-defined-function-arg-var (arg)
+  (car arg))
+
+(defun user-defined-function-arg-type (arg)
+  (cadr arg))
+
+(defun user-defined-function-arg-unique-vars (arg)
+  (caddr arg))
 
 (defun user-defined-application-p (exp)
   (match exp
@@ -424,19 +466,46 @@
     (_ nil)))
 
 (defun compile-user-defined-application (exp type-env)
-  (match exp
-    ((fun . vals) (compile-exp (compile-user-defined-application% exp fun vals)
-                               type-env))))
+  (labels ((same-type (arg val)
+             (eq (user-defined-function-arg-type arg)
+                 (type-of-exp val type-env))))
+    (match exp
+      ((fun . vals) (let ((args (user-defined-function-args fun))
+                          (exp (user-defined-function-compiled-expression fun)))
+                      (if (= (length args) (length vals))
+                          (if (every #'same-type args vals)
+                              (compile-user-defined-application% args vals exp)
+                              (error (format nil "invalid argument type: ~A"
+                                             exp)))
+                          (error (format nil "invalid number of arguments: ~A"
+                                         exp))))))))
 
-(defun compile-user-defined-application% (exp fun vals)
-  (labels ((binding (var val)
-             (match var
-               ((type v) (list v type val)))))
-    (let ((vars (user-defined-function-args fun)))
-      (if (= (length vars) (length vals))
-          `(let (,@(mapcar #'binding vars vals))
-             ,(user-defined-function-exp fun))
-          (error (format nil "invalid number of arguments: ~A" exp))))))
+(defun compile-user-defined-application% (args vals exp)
+  (if (null args)
+      exp
+      (let ((arg (car args))
+            (val (car vals))
+            (rest-args (cdr args))
+            (rest-vals (cdr vals)))
+        (case (user-defined-function-arg-type arg)
+          (bool (compile-user-defined-application-single% arg val rest-args
+                                                          rest-vals exp))
+          (int (compile-user-defined-application-single% arg val rest-args
+                                                         rest-vals exp))
+          (scalar (compile-user-defined-application-single% arg val rest-args
+                                                            rest-vals exp))
+          (vec3 (compile-user-defined-application-vec3% arg val rest-args
+                                                        rest-vals exp))))))
+
+(defun compile-user-defined-application-single% (arg val args vals exp)
+  (let ((var (user-defined-function-arg-unique-vars arg)))
+    `(let ((,var ,val))
+       ,(compile-user-defined-application% args vals exp))))
+
+(defun compile-user-defined-application-vec3% (arg val args vals exp)
+  (let ((vars (user-defined-function-arg-unique-vars arg)))
+    `(multiple-value-bind ,vars ,val
+       ,(compile-user-defined-application% args vals exp))))
 
 
 ;;; application of built-in functions
@@ -533,7 +602,7 @@
         ((if-p exp) (type-of-if exp type-env))
         ((variable-p exp) (type-of-variable exp type-env))
         ((user-defined-application-p exp)
-         (type-of-user-defined-application exp type-env))
+         (type-of-user-defined-application exp))
         ((built-in-application-p exp)
          (type-of-built-in-application exp type-env))
         (t (error (format nil "invalid expression: ~A" exp)))))
@@ -614,10 +683,9 @@
     (nil  (error (format nil "unbound variable: ~A" var)))
     (type type)))
 
-(defun type-of-user-defined-application (exp type-env)
+(defun type-of-user-defined-application (exp)
   (match exp
-    ((fun . args) (type-of-exp (compile-user-defined-application% exp fun args)
-                               type-env))))
+    ((fun . _) (user-defined-function-return-type fun))))
 
 (defun type-of-built-in-application (exp type-env)
   (match exp
@@ -630,7 +698,8 @@
 
 ;;; type environment
 
-;; type-env ::= ( (<variable> . <type>)* )
+;; type-environment ::= ( <type-pair>* )
+;; type-pair        ::= ( <variable> . <type> )
 
 (defun empty-type-environment ()
   '())
@@ -642,9 +711,36 @@
   (assert-type type)
   (cons (cons var type) type-env))
 
+(defun make-type-environment (vars types)
+  (let ((pairs (mapcar #'cons vars types)))
+    (reduce (lambda (env pair)
+              (add-type-environment (car pair) (cdr pair) env))
+            pairs :initial-value (empty-type-environment))))
+
 (defun lookup-type-environment (var type-env)
-  (match (assoc var type-env)
-    ((_ . type) type)
-    (_          nil)))
+  (aif (assoc var type-env)
+       (cdr it)
+       nil))
 
 
+;;; variable environment
+
+;; variable-environment ::= ( <variable-pair>* )
+;; variable-pair        ::= ( <variable> . <unique-variable> )
+
+(defun empty-variable-environment ()
+  '())
+
+(defun add-variable-environment (var unique-var var-env)
+  (cons (cons var unique-var) var-env))
+
+(defun make-variable-environment (vars unique-vars)
+  (let ((pairs (mapcar #'cons vars unique-vars)))
+    (reduce (lambda (env pair)
+              (add-variable-environment (car pair) (cdr pair) env))
+            pairs :initial-value (empty-variable-environment))))
+
+(defun lookup-variable-environment (var var-env)
+  (aif (assoc var var-env)
+       (cdr it)
+       nil))
