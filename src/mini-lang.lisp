@@ -63,58 +63,77 @@
           (destructuring-bind (op . rest) exp
             `(,op ,@(mapcar #'binarize rest))))))
 
-(defun single-assignment (exp)
-  (single-assignment% exp (empty-variable-environment)))
-
-(defun single-assignment% (exp var-env)
+(defun single-assignment (exp var-env type-env)
   (cond ((bool-literal-p exp) exp)
         ((int-literal-p exp) exp)
         ((scalar-literal-p exp) exp)
         ((vec3-literal-p exp) exp)
         ((external-environment-reference-p exp) exp)
-        ((let-p exp) (single-assignment-let exp var-env))
-        ((if-p exp) (single-assignment-if exp var-env))
+        ((let-p exp) (single-assignment-let exp var-env type-env))
+        ((if-p exp) (single-assignment-if exp var-env type-env))
         ((variable-p exp) (single-assignment-variable exp var-env))
         ((user-defined-application-p exp)
-         (single-assignment-application exp var-env))
+         (single-assignment-user-defined-application exp var-env type-env))
         ((built-in-application-p exp)
-         (single-assignment-application exp var-env))
+         (single-assignment-built-in-application exp var-env type-env))
         (t (error (format nil "invalid expression: ~A" exp)))))
 
-(defun single-assignment-let (exp var-env)
-  (single-assignment-let% (let-binds exp) (let-exp exp) var-env))
+(defun single-assignment-let (exp var-env type-env)
+  (single-assignment-let% (let-binds exp) (let-exp exp) var-env type-env))
 
-(defun single-assignment-let% (binds exp var-env)
+(defun single-assignment-let% (binds exp var-env type-env)
   (if (null binds)
-      (single-assignment% exp var-env)
-      (single-assignment-bind binds exp var-env)))
+      (single-assignment exp var-env type-env)
+      (single-assignment-bind binds exp var-env type-env)))
 
-(defun single-assignment-bind (binds exp var-env)
+(defun single-assignment-bind (binds exp var-env type-env)
   (match binds
     (((var type val) . rest)
-     (let* ((unique-var (make-unique-variable var))
-            (var-env2 (add-variable-environment var unique-var var-env)))
-       `(let ((,unique-var ,type ,(single-assignment% val var-env)))
-          ,(single-assignment-let% rest exp var-env2))))))
+     (if (eq (type-of-exp val type-env) type)
+         (let* ((unique-var (make-unique-variable var))
+                (var-env2 (add-variable-environment var unique-var var-env))
+                (type-env2 (add-type-environment var type type-env)))
+           `(let ((,unique-var ,type ,(single-assignment val var-env type-env)))
+              ,(single-assignment-let% rest exp var-env2 type-env2)))
+         (error (format nil "contradict type in let bind: ~A" var))))))
 
-(defun single-assignment-if (exp var-env)
+(defun single-assignment-if (exp var-env type-env)
   (match exp
     (('if test-form then-form else-form)
-     `(if ,(single-assignment% test-form var-env)
-          ,(single-assignment% then-form var-env)
-          ,(single-assignment% else-form var-env)))))
+     `(if ,(single-assignment test-form var-env type-env)
+          ,(single-assignment then-form var-env type-env)
+          ,(single-assignment else-form var-env type-env)))))
 
 (defun single-assignment-variable (var var-env)
   (aif (lookup-variable-environment var var-env)
        it
        (error (format nil "unbound variable: ~A" var))))
 
-(defun single-assignment-application (exp var-env)
-  (match exp
-    ((fun . vals) `(,fun ,@(mapcar (lambda (val)
-                                     (single-assignment% val var-env))
-                                   vals)))))
+(defun single-assignment-user-defined-application (exp var-env type-env)
+  (labels ((same-type (arg val)
+             (eq (user-defined-function-arg-type arg)
+                 (type-of-exp val type-env))))
+    (match exp
+      ((fun . vals)
+       (let ((args (user-defined-function-args fun)))
+         (if (= (length args) (length vals))
+             (if (every #'same-type args vals)
+                 `(,fun ,@(mapcar (lambda (val)
+                                    (single-assignment val var-env type-env))
+                                  vals))
+                 (error (format nil "invalid argument type: ~A" exp)))
+             (error (format nil "invalid number of arguments: ~A" exp))))))))
 
+(defun single-assignment-built-in-application (exp var-env type-env)
+  (match exp
+    ((op . operands)
+     (let ((candidates (operation-candidates op)))
+       (if (infer-op operands candidates type-env)
+           `(,op ,@(mapcar (lambda (val)
+                             (single-assignment val var-env type-env))
+                           operands))
+           (error (format nil "invalid application: ~A" exp)))))))
+                           
 
 ;;; definition of bool
 
@@ -259,7 +278,10 @@
 ;;; compile
 
 (defmacro compile-mini-lang (exp)
-  (compile-exp (binarize (single-assignment exp)) (empty-type-environment)))
+  (let ((exp2 (single-assignment (binarize exp)
+                                 (empty-variable-environment)
+                                 (empty-type-environment))))
+    (compile-exp exp2 (empty-type-environment))))
 
 (defun compile-exp (exp type-env)
   (cond ((bool-literal-p exp) exp)
@@ -461,11 +483,12 @@
                (types (mapcar #'car args))
                (unique-vars (mapcar #'make-unique-variable vars)))
           (let* ((var-env (make-variable-environment vars unique-vars))
-                 (exp2 (binarize (single-assignment% exp var-env))))
-            (let ((type-env (make-type-environment unique-vars types)))
+                 (type-env (make-type-environment vars types))
+                 (exp2 (single-assignment (binarize exp) var-env type-env)))
+            (let ((type-env2 (make-type-environment unique-vars types)))
               (let ((args2 (make-user-defined-function-args unique-vars types))
-                    (return-type (type-of-exp exp2 type-env))
-                    (compiled-expression (compile-exp exp2 type-env)))
+                    (return-type (type-of-exp exp2 type-env2))
+                    (compiled-expression (compile-exp exp2 type-env2)))
                 (list name args2 return-type compiled-expression)))))
         (error (format nil "invalid function definition: (define-function ~A ~A ~A)" name args exp)))))
 
@@ -515,10 +538,8 @@
              (if (every #'same-type args vals)
                  (compile-user-defined-application%
                   args vals exp2 type-env)
-                 (error (format nil "invalid argument type: ~A"
-                                exp)))
-             (error (format nil "invalid number of arguments: ~A"
-                            exp))))))))
+                 (error (format nil "invalid argument type: ~A" exp)))
+             (error (format nil "invalid number of arguments: ~A" exp))))))))
 
 (defun compile-user-defined-application% (args vals exp type-env)
   (if (null args)
