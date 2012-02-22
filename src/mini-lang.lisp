@@ -458,7 +458,7 @@
   (setf *user-defined-functions* nil))
 
 (defmacro define-function (name args exp)
-  `(eval-when (:load-toplevel :execute)
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
      (let ((func (make-user-defined-function ',name ',args ',exp)))
        (setf (getf *user-defined-functions* ',name) func)
        ',name)))
