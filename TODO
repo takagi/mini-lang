@@ -8,6 +8,7 @@
 ;;; * add type specification to output of compile-variable
 ;;;
 ;;; Done:
+;;; * add tests on the selectors of user-defined-function
 ;;; * explicitly implement lexical scoping independent of inferior common lisp's one
 ;;; * add sph example
 ;;; * add diffusion simulation example

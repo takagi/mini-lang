@@ -466,7 +466,8 @@
 
 ;; <user-defined-functions> ::= ( <name> <user-defined-function>
 ;;                                <name> <user-defined-function> ... )
-;; <user-defined-function>  ::= ( <args> <return-type> <compiled-expression>)
+;; <user-defined-function>  ::= ( <name> <args> <return-type>
+;;                                              <compiled-expression> )
 ;; <args>                   ::= ( <arg>* )
 ;; <arg>                    ::= ( <var> <type> )
 ;; <unique-vars>            ::= <var>          if <type> is bool, int and scalar
@@ -504,22 +505,34 @@
     (setf counter 0)))
 
 (defun user-defined-function-name (fun)
-  (car (getf *user-defined-functions* fun)))
+  (match (getf *user-defined-functions* fun)
+    ((name _ _ _) name)
+    (_ (error (format nil "undefined function: ~A" fun)))))
 
 (defun user-defined-function-args (fun)
-  (cadr (getf *user-defined-functions* fun)))
+  (match (getf *user-defined-functions* fun)
+    ((_ args _ _) args)
+    (_ (error (format nil "undefined function: ~A" fun)))))
 
 (defun user-defined-function-return-type (fun)
-  (caddr (getf *user-defined-functions* fun)))
+  (match (getf *user-defined-functions* fun)
+    ((_ _ return-type _) return-type)
+    (_ (error (format nil "undefined function: ~A" fun)))))
 
 (defun user-defined-function-compiled-expression (fun)
-  (cadddr (getf *user-defined-functions* fun)))
+  (match (getf *user-defined-functions* fun)
+    ((_ _ _ compiled-expression) compiled-expression)
+    (_ (error (format nil "undefined function: ~A" fun)))))
 
 (defun user-defined-function-arg-var (arg)
-  (car arg))
+  (match arg
+    ((var _) var)
+    (_ (error (format nil "invalid argument: ~A" arg)))))
 
 (defun user-defined-function-arg-type (arg)
-  (cadr arg))
+  (match arg
+    ((_ type) type)
+    (_ (error (format nil "invalid argument: ~A" arg)))))
 
 (defun user-defined-application-p (exp)
   (match exp
