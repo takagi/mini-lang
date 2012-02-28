@@ -94,9 +94,9 @@
 
 ;;; test compile-exp
 
-(is (mini-lang::compile-exp 1d0 *empty-type-env*)
+(is (mini-lang::compile-exp 1d0 *empty-var-env* *empty-type-env*)
     1d0 "compile-exp 1")
-(is (mini-lang::compile-exp '(1d0 1d0 1d0) *empty-type-env*)
+(is (mini-lang::compile-exp '(1d0 1d0 1d0) *empty-var-env* *empty-type-env*)
     '(mini-lang::vec3-values* 1d0 1d0 1d0)
     "compile-exp 2")
 
@@ -158,51 +158,66 @@
     "let-binds")
 (is (mini-lang::let-exp '(let ((x scalar 1d0)) x)) 'x "let-exp")
 
-(is (mini-lang::compile-let% '((x bool t)) '1d0 *empty-type-env*)
-    '(let ((x t)) 1d0) "compile-let% 1")
-(is (mini-lang::compile-let% '((x int 1)) 1 *empty-type-env*)
-    `(let ((x 1)) 1) "compile-let% 2")
-(is (mini-lang::compile-let% '((x scalar 1d0)) '1d0 *empty-type-env*)
-    '(let ((x 1d0)) 1d0) "compile-let% 3")
-(is (mini-lang::compile-let% '((x vec3 (1d0 1d0 1d0))) '1d0 *empty-type-env*)
-    '(multiple-value-bind (x-0 x-1 x-2) (mini-lang::vec3-values* 1d0 1d0 1d0)
+(mini-lang::reset-unique-variables-counter)
+(is (mini-lang::compile-let% '((x bool t)) '1d0
+                             *empty-var-env* *empty-type-env*)
+    '(let ((x1 t)) 1d0) "compile-let% 1")
+(is (mini-lang::compile-let% '((x int 1)) 1 *empty-var-env* *empty-type-env*)
+    `(let ((x2 1)) 1) "compile-let% 2")
+(is (mini-lang::compile-let% '((x scalar 1d0)) '1d0
+                             *empty-var-env* *empty-type-env*)
+    '(let ((x3 1d0)) 1d0) "compile-let% 3")
+(is (mini-lang::compile-let% '((x vec3 (1d0 1d0 1d0))) '1d0
+                             *empty-var-env* *empty-type-env*)
+    '(multiple-value-bind (x4 x5 x6) (mini-lang::vec3-values* 1d0 1d0 1d0)
        1d0) "compile-let% 4")
 
-(is-error (mini-lang::compile-let% '((x bool 1d0)) 'x *empty-type-env*)
+(is-error (mini-lang::compile-let% '((x bool 1d0)) 'x 
+                                   *empty-var-env* *empty-type-env*)
           simple-error "compile-let% 5")
-(is-error (mini-lang::compile-let% '((x int 1d0)) 'x *empty-type-env*)
+(is-error (mini-lang::compile-let% '((x int 1d0)) 'x
+                                   *empty-var-env* *empty-type-env*)
           simple-error "compile-let% 6")
-(is-error (mini-lang::compile-let% '((x scalar t)) 'x *empty-type-env*)
+(is-error (mini-lang::compile-let% '((x scalar t)) 'x
+                                   *empty-var-env* *empty-type-env*)
           simple-error "compile-let% 7")
-(is-error (mini-lang::compile-let% '((x vec3 1d0)) 'x *empty-type-env*)
+(is-error (mini-lang::compile-let% '((x vec3 1d0)) 'x
+                                   *empty-var-env* *empty-type-env*)
           simple-error "compile-let% 8")
 
-(is (mini-lang::compile-let% '((x bool t)) 'x *empty-type-env*)
-    '(let ((x t)) x) "compile-let% 9")
-(is (mini-lang::compile-let% '((x int 1)) 'x *empty-type-env*)
-    '(let ((x 1)) x) "compile-let% 10")
-(is (mini-lang::compile-let% '((x scalar 1d0)) 'x *empty-type-env*)
-    '(let ((x 1d0)) x) "compile-let% 11")
-(is (mini-lang::compile-let% '((x vec3 (1d0 1d0 1d0))) 'x *empty-type-env*)
-    '(multiple-value-bind (x-0 x-1 x-2) (mini-lang::vec3-values* 1d0 1d0 1d0)
-       (mini-lang::vec3-values* x-0 x-1 x-2)) "compile-let% 12")
+(is (mini-lang::compile-let% '((x bool t)) 'x *empty-var-env* *empty-type-env*)
+    '(let ((x7 t)) x7) "compile-let% 9")
+(is (mini-lang::compile-let% '((x int 1)) 'x *empty-var-env* *empty-type-env*)
+    '(let ((x8 1)) x8) "compile-let% 10")
+(is (mini-lang::compile-let% '((x scalar 1d0)) 'x
+                             *empty-var-env* *empty-type-env*)
+    '(let ((x9 1d0)) x9) "compile-let% 11")
+(is (mini-lang::compile-let% '((x vec3 (1d0 1d0 1d0))) 'x
+                             *empty-var-env* *empty-type-env*)
+    '(multiple-value-bind (x10 x11 x12) (mini-lang::vec3-values* 1d0 1d0 1d0)
+       (mini-lang::vec3-values* x10 x11 x12)) "compile-let% 12")
 
-(is (mini-lang::compile-let '(let ((x bool t)) x) *empty-type-env*)
-    '(let ((x t)) x) "compile-let 1")
-(is (mini-lang::compile-let '(let ((x int 1)) x) *empty-type-env*)
-    '(let ((x 1)) x) "compile-let 2")
-(is (mini-lang::compile-let '(let ((x scalar 1d0)) x) *empty-type-env*)
-    '(let ((x 1d0)) x) "compile-let 3")
-(is (mini-lang::compile-let '(let ((x vec3 (1d0 1d0 1d0))) x) *empty-type-env*)
-    '(multiple-value-bind (x-0 x-1 x-2) (mini-lang::vec3-values* 1d0 1d0 1d0)
-       (mini-lang::vec3-values* x-0 x-1 x-2)) "compile-let 4")
+(mini-lang::reset-unique-variables-counter)
+(is (mini-lang::compile-let '(let ((x bool t)) x)
+                            *empty-var-env* *empty-type-env*)
+    '(let ((x1 t)) x1) "compile-let 1")
+(is (mini-lang::compile-let '(let ((x int 1)) x)
+                            *empty-var-env* *empty-type-env*)
+    '(let ((x2 1)) x2) "compile-let 2")
+(is (mini-lang::compile-let '(let ((x scalar 1d0)) x)
+                            *empty-var-env* *empty-type-env*)
+    '(let ((x3 1d0)) x3) "compile-let 3")
+(is (mini-lang::compile-let '(let ((x vec3 (1d0 1d0 1d0))) x)
+                            *empty-var-env* *empty-type-env*)
+    '(multiple-value-bind (x4 x5 x6) (mini-lang::vec3-values* 1d0 1d0 1d0)
+       (mini-lang::vec3-values* x4 x5 x6)) "compile-let 4")
 (is (mini-lang::compile-let '(let ((y scalar 1d0))
                                (let ((x vec3 (1d0 1d0 1d0)))
                                  y))
-                            *empty-type-env*)
-    '(let ((y 1d0))
-       (multiple-value-bind (x-0 x-1 x-2) (mini-lang::vec3-values* 1d0 1d0 1d0)
-         y))
+                            *empty-var-env* *empty-type-env*)
+    '(let ((y7 1d0))
+       (multiple-value-bind (x8 x9 x10) (mini-lang::vec3-values* 1d0 1d0 1d0)
+         y7))
     "compile-let 5")
 
 
@@ -210,7 +225,7 @@
 
 (is (mini-lang::if-p '(if t 2d0 1d0)) t "if-p")
 
-(is (mini-lang::compile-if '(if t 2d0 1d0) *empty-type-env*)
+(is (mini-lang::compile-if '(if t 2d0 1d0) *empty-var-env* *empty-type-env*)
     `(if t 2d0 1d0) "compile-if")
 
 
@@ -218,30 +233,43 @@
 
 (is (mini-lang::variable-p 'x) t "variable-p")
 
+(mini-lang::reset-unique-variables-counter)
+
 (let ((type-env (mini-lang::add-type-environment 'x 'bool *empty-type-env*)))
-  (is (mini-lang::compile-variable 'x type-env) 'x "compile-variable 1"))
+  (multiple-value-bind (_ var-env)
+      (mini-lang::add-variable-environment 'x 'bool *empty-var-env*)
+    (declare (ignorable _))
+    (is (mini-lang::compile-variable 'x var-env type-env)
+        'x1 "compile-variable 1")))
 
 (let ((type-env (mini-lang::add-type-environment 'x 'int *empty-type-env*)))
-  (is (mini-lang::compile-variable 'x type-env) 'x "compile-variable 2"))
+  (multiple-value-bind (_ var-env)
+      (mini-lang::add-variable-environment 'x 'int *empty-var-env*)
+    (declare (ignorable _))
+    (is (mini-lang::compile-variable 'x var-env type-env)
+        'x2 "compile-variable 2")))
 
 (let ((type-env (mini-lang::add-type-environment 'x 'scalar *empty-type-env*)))
-  (is (mini-lang::compile-variable 'x type-env) 'x "compile-variable 3"))
+  (multiple-value-bind (_ var-env)
+      (mini-lang::add-variable-environment 'x 'scalar *empty-var-env*)
+    (declare (ignorable _))
+    (is (mini-lang::compile-variable 'x var-env type-env)
+        'x3 "compile-variable 3")))
 
 (let ((type-env (mini-lang::add-type-environment 'x 'vec3 *empty-type-env*)))
-  (is (mini-lang::compile-variable 'x type-env)
-      '(mini-lang::vec3-values* x-0 x-1 x-2) "compile-variable 4"))
-
-(is (mini-lang::make-symbols-for-values 'x)
-    '(x-0 x-1 x-2) "make-symbols-for-values")
+  (multiple-value-bind (_ var-env)
+      (mini-lang::add-variable-environment 'x 'vec3 *empty-var-env*)
+    (declare (ignorable _))
+    (is (mini-lang::compile-variable 'x var-env type-env)
+        '(mini-lang::vec3-values* x4 x5 x6) "compile-variable 4")))
 
 
 ;;; test user-defined function
 
-(mini-lang::reset-unique-variables-counter)
-(is (mini-lang::make-unique-variable 'x) 'x1 "make-unique-variable")
-
-(is (mini-lang::make-user-defined-function-args '(x y) '(scalar vec3))
-    '((x scalar) (y vec3)) "make-user-defined-function-args")
+(is (mini-lang::make-user-defined-function-args '(x y)
+                                                '(scalar vec3)
+                                                '(x1 (y2 y3 y4)))
+    '((x scalar x1) (y vec3 (y2 y3 y4))) "make-user-defined-function-args")
 
 (mini-lang::reset-unique-variables-counter)
 (define-function f ((scalar x))
@@ -249,7 +277,7 @@
 (is (mini-lang::user-defined-function-name 'f)
     'f "user-defined-function-name 1")
 (is (mini-lang::user-defined-function-args 'f)
-    '((x1 scalar)) "user-defined-function-args 1")
+    '((x scalar x1)) "user-defined-function-args 1")
 (is (mini-lang::user-defined-function-return-type 'f)
     'scalar "user-defined-function-return-type 1")
 (is (mini-lang::user-defined-function-compiled-expression 'f)
@@ -261,11 +289,11 @@
 (is (mini-lang::user-defined-function-name 'g)
     'g "user-defined-function-name 2")
 (is (mini-lang::user-defined-function-args 'g)
-    '((x1 scalar) (y2 vec3)) "user-defined-function-args 2")
+    '((x scalar x1) (y vec3 (y2 y3 y4))) "user-defined-function-args 2")
 (is (mini-lang::user-defined-function-return-type 'g)
     'vec3 "user-defined-function-return-type 2")
 (is (mini-lang::user-defined-function-compiled-expression 'g)
-    '(mini-lang::vec3-scale%* x1 (mini-lang::vec3-values* y2-0 y2-1 y2-2))
+    '(mini-lang::vec3-scale%* x1 (mini-lang::vec3-values* y2 y3 y4))
     "user-defined-funciton-compiled-expression 2")
 
 (is-error (mini-lang::user-defined-function-name 'undefined-function)
@@ -279,9 +307,11 @@
 
 (let ((arg (car (mini-lang::user-defined-function-args 'f))))
   (is (mini-lang::user-defined-function-arg-var arg)
-      'x1 "user-defined-function-arg-var")
+      'x "user-defined-function-arg-var")
   (is (mini-lang::user-defined-function-arg-type arg)
-      'scalar "user-defined-function-arg-type"))
+      'scalar "user-defined-function-arg-type")
+  (is (mini-lang::user-defined-function-arg-unique-var arg)
+      'x1 "user-defined-function-arg-unique-var"))
 
 
 ;;; test define-function and defined function's application
@@ -299,10 +329,13 @@
     "user-defined-application-p 1")
 (is (mini-lang::user-defined-application-p '(f2 1d0)) nil
     "user-defined-aplication-p 2")
-(is (mini-lang::compile-user-defined-application '(f 1d0) *empty-type-env*)
+(is (mini-lang::compile-user-defined-application '(f 1d0)
+                                                 *empty-var-env*
+                                                 *empty-type-env*)
     '(let ((x1 1d0))
        (+ x1 1d0)) "compile-user-defined-application 1")
 (is-error (mini-lang::compile-user-defined-application '(f 1d0 1d0)
+                                                       *empty-var-env*
                                                        *empty-type-env*)
           simple-error "compile-user-defined-application 2")
 
@@ -311,7 +344,9 @@
   (+ x y 1d0))
 (is (mini-lang::user-defined-application-p '(g 1d0 1d0)) t
     "user-defined-application-p 3")
-(is (mini-lang::compile-user-defined-application '(g 1d0 1d0) *empty-type-env*)
+(is (mini-lang::compile-user-defined-application '(g 1d0 1d0)
+                                                 *empty-var-env*
+                                                 *empty-type-env*)
     '(let ((x1 1d0))
       (let ((y2 1d0))
         (+ (+ x1 y2) 1d0))) "compile-user-defined-application 3")
@@ -322,12 +357,14 @@
 (is (mini-lang::user-defined-application-p '(f (1d0 1d0 1d0))) t
     "user-defined-application-p 4")
 (is (mini-lang::compile-user-defined-application '(f (1d0 1d0 1d0))
+                                                 *empty-var-env*
                                                  *empty-type-env*)
-    '(multiple-value-bind (x1-0 x1-1 x1-2) (mini-lang::vec3-values* 1d0 1d0 1d0)
-       (mini-lang::vec3-add* (mini-lang::vec3-values* x1-0 x1-1 x1-2)
+    '(multiple-value-bind (x1 x2 x3) (mini-lang::vec3-values* 1d0 1d0 1d0)
+       (mini-lang::vec3-add* (mini-lang::vec3-values* x1 x2 x3)
                              (mini-lang::vec3-values* 1d0 1d0 1d0)))
     "compile-user-defined-application 4")
 (is-error (mini-lang::compile-user-defined-application '(f 1d0)
+                                                       *empty-var-env*
                                                        *empty-type-env*)
           simple-error "compile-user-defined-application 5")
 
@@ -345,11 +382,9 @@
 (mini-lang::reset-unique-variables-counter)
 (define-function f ((scalar x))
   x)
-(is (mini-lang::compile-exp
-     (mini-lang::single-assignment '(let ((x scalar 1d0))
-                                     (+ x (f x)))
-                                   *empty-var-env* *empty-type-env*)
-     *empty-type-env*)
+(is (mini-lang::compile-exp '(let ((x scalar 1d0))
+                              (+ x (f x)))
+                            *empty-var-env* *empty-type-env*)
     '(let ((x2 1.0d0))
       (+ x2 (let ((x1 x2))
               x1)))
@@ -359,11 +394,9 @@
 (define-function f ((scalar x))
   (let ((x scalar x))
     x))
-(is (mini-lang::compile-exp
-     (mini-lang::single-assignment '(let ((x scalar 1d0))
-                                     (+ x (f x)))
-                                   *empty-var-env* *empty-type-env*)
-     *empty-type-env*)
+(is (mini-lang::compile-exp '(let ((x scalar 1d0))
+                              (+ x (f x)))
+                            *empty-var-env* *empty-type-env*)
     '(let ((x3 1d0))
       (+ x3 (let ((x1 x3))
               (let ((x2 x1))
@@ -378,34 +411,47 @@
 (is (mini-lang::built-in-application-p '(++ 1d0 1d0)) nil
     "build-in-application-p 2")
 
-(is (mini-lang::compile-built-in-application '(+ 1d0 1d0) *empty-type-env*)
+(mini-lang::reset-unique-variables-counter)
+(is (mini-lang::compile-built-in-application '(+ 1d0 1d0)
+                                             *empty-var-env* *empty-type-env*)
     '(+ 1d0 1d0) "compile-built-in-application 1")
 (is (let ((type-env (mini-lang::make-type-environment '(x y) '(scalar scalar))))
-      (mini-lang::compile-built-in-application '(+ x y) type-env))
-    '(+ x y) "compile-built-in-application 2")
+      (multiple-value-bind (_ var-env)
+          (mini-lang::make-variable-environment '(x y) '(scalar scalar))
+        (declare (ignorable _))
+        (mini-lang::compile-built-in-application '(+ x y) var-env type-env)))
+    '(+ x1 y2) "compile-built-in-application 2")
 (is (mini-lang::compile-built-in-application '(+ (1d0 1d0 1d0) (1d0 1d0 1d0))
+                                             *empty-var-env*
                                              *empty-type-env*)
     '(mini-lang::vec3-add* (mini-lang::vec3-values* 1d0 1d0 1d0)
                              (mini-lang::vec3-values* 1d0 1d0 1d0))
     "compile-built-in-application 3")
 (is (let ((type-env (mini-lang::make-type-environment '(x y) '(vec3 vec3))))
-      (mini-lang::compile-built-in-application '(+ x y) type-env))
-    '(mini-lang::vec3-add* (mini-lang::vec3-values* x-0 x-1 x-2)
-                             (mini-lang::vec3-values* y-0 y-1 y-2))
+      (multiple-value-bind (_ var-env)
+          (mini-lang::make-variable-environment '(x y) '(vec3 vec3))
+        (declare (ignorable _))
+        (mini-lang::compile-built-in-application '(+ x y) var-env type-env)))
+    '(mini-lang::vec3-add* (mini-lang::vec3-values* x3 x4 x5)
+                             (mini-lang::vec3-values* y6 y7 y8))
     "compile-built-in-application 4")
 
 (is-error (mini-lang::compile-built-in-application '(++ 1d0 1d0)
+                                                   *empty-var-env*
                                                    *empty-type-env*)
           simple-error "compile-built-in-application 5")
 (is-error (mini-lang::compile-built-in-application '(+ (1d0 1d0 1d0) 1d0)
+                                                   *empty-var-env*
                                                    *empty-type-env*)
           simple-error "compile-built-in-application 6")
 
 (is (mini-lang::compile-built-in-application '(* (1d0 1d0 1d0) 1d0)
+                                             *empty-var-env*
                                              *empty-type-env*)
     '(mini-lang::vec3-scale* (mini-lang::vec3-values* 1d0 1d0 1d0) 1d0)
     "compile-built-in-application 7")
 (is (mini-lang::compile-built-in-application '(* 1d0 (1d0 1d0 1d0))
+                                             *empty-var-env*
                                              *empty-type-env*)
     '(mini-lang::vec3-scale%* 1d0 (mini-lang::vec3-values* 1d0 1d0 1d0))
     "compile-built-in-application 8")
@@ -422,21 +468,26 @@
     'vec3 "infer-return-type")
 
 (is (mini-lang::compile-built-in-application '(norm (1d0 1d0 1d0))
+                                             *empty-var-env*
                                              *empty-type-env*)
     '(mini-lang::vec3-norm* (mini-lang::vec3-values* 1d0 1d0 1d0))
     "compile-built-in-application 9")
 
-(is (mini-lang::compile-built-in-application '(- 1d0) *empty-type-env*)
+(is (mini-lang::compile-built-in-application '(- 1d0)
+                                             *empty-var-env* *empty-type-env*)
     '(- 1d0) "compile-built-in-application 10")
 (is (mini-lang::compile-built-in-application '(- (1d0 1d0 1d0))
+                                             *empty-var-env*
                                              *empty-type-env*)
     `(mini-lang::vec3-negate* (mini-lang::vec3-values* 1d0 1d0 1d0))
     "compile-built-in-application 11")
 
-(is (mini-lang::compile-built-in-application '(exp 1d0) *empty-type-env*)
+(is (mini-lang::compile-built-in-application '(exp 1d0)
+                                             *empty-var-env* *empty-type-env*)
     '(exp 1d0) "compile-built-in-application 12")
 
-(is (mini-lang::compile-built-in-application '(= 1 1) *empty-type-env*)
+(is (mini-lang::compile-built-in-application '(= 1 1)
+                                             *empty-var-env* *empty-type-env*)
     '(= 1 1) "compile-built-in-application 13")
 
 
@@ -561,22 +612,30 @@
 
 ;;; test variable environment
 
+(mini-lang::reset-unique-variables-counter)
 (is (mini-lang::empty-variable-environment) '() "empty-variable-environment")
-(is (mini-lang::add-variable-environment
-     'x 'x1 (mini-lang::empty-variable-environment))
-    '((x . x1)) "add-variable-environment")
+(multiple-value-bind (unique-var var-env)
+    (mini-lang::add-variable-environment
+     'x 'scalar (mini-lang::empty-variable-environment))
+  (is unique-var 'x1 "add-variable-environment 1")
+  (is var-env '((x . x1)) "add-variable-environment 2"))
 (is (mini-lang::lookup-variable-environment 'x '((x . x1)))
     'x1 "lookup-variable-environment 1")
 (is (mini-lang::lookup-variable-environment
      'x (mini-lang::empty-variable-environment))
     nil "lookup-variable-environment 2")
-(is (mini-lang::make-variable-environment '(x y) '(x1 (y2 y3 y4)))
-    '((y . (y2 y3 y4)) (x . x1)) "make-variable-environment 1")
-(is (mini-lang::make-variable-environment '(x y) '(x1))
-    '((x . x1)) "make-variable-environment 2")
-(is (mini-lang::make-variable-environment '(x) '(x1 (y2 y3 y4)))
-    '((x . x1)) "make-variable-environment 3")
-
+(multiple-value-bind (unique-vars var-env)
+    (mini-lang::make-variable-environment '(x y) '(scalar vec3))
+  (is unique-vars '(x2 (y3 y4 y5)) "make-variable-environment 1")
+  (is var-env '((y . (y3 y4 y5)) (x . x2)) "make-variable-environment 2"))
+(multiple-value-bind (unique-vars var-env)
+    (mini-lang::make-variable-environment '(x y) '(scalar))
+  (is unique-vars '(x6) "make-variable-environment 3")
+  (is var-env '((x . x6)) "make-variable-environment 4"))
+(multiple-value-bind (unique-vars var-env)
+    (mini-lang::make-variable-environment '(x) '(scalar vec3))
+  (is unique-vars '(x7) "make-variable-environment 5")
+  (is var-env '((x . x7)) "make-variable-environment 6"))
 
 
 ;;; test binrization
@@ -588,55 +647,11 @@
 (is (mini-lang::binarize '(+ (+ 1 1 1) (+ 1 1 1) 1))
     '(+ (+ (+ (+ 1 1) 1)
          (+ (+ 1 1) 1))
-      1) "binarize 4")
+      1) "binarize 5")
 (is (mini-lang::binarize '(+ (+ 1 1 1) (+ 1 1 1)))
     '(+ (+ (+ 1 1) 1)
-      (+ (+ 1 1) 1)) "binarize 5")
-(is (mini-lang::type-of-mini-lang '(+ 1d0 1d0 1d0)) 'scalar "binarize 6")
-
-
-;;; test single assignment
-
-(mini-lang::reset-unique-variables-counter)
-(is (mini-lang::single-assignment 't *empty-var-env* *empty-type-env*)
-    't "single-assignment 1")
-(is (mini-lang::single-assignment '1d0 *empty-var-env* *empty-type-env*)
-    '1d0 "single-assignment 2")
-(is (mini-lang::single-assignment '(1d0 1d0 1d0)
-                                  *empty-var-env* *empty-type-env*)
-    '(1d0 1d0 1d0) "single-assignment 3")
-(is (mini-lang::single-assignment '(scalar x) *empty-var-env* *empty-type-env*)
-    '(scalar x) "single-assignment 4")
-(is (mini-lang::single-assignment '(let ((x scalar 1d0)) 1d0)
-                                  *empty-var-env* *empty-type-env*)
-    '(let ((x1 scalar 1d0)) 1d0) "single-assignment 5")
-(is (mini-lang::single-assignment '(let ((x vec3 (1d0 1d0 1d0))) (1d0 1d0 1d0))
-                                  *empty-var-env* *empty-type-env*)
-    '(let ((x2 vec3 (1d0 1d0 1d0))) (1d0 1d0 1d0)) "single-assignment 6")
-(is (mini-lang::single-assignment '(if (let ((x bool t)) t)
-                                    (let ((x scalar 1d0)) 1d0)
-                                    (let ((x scalar 2d0)) 2d0))
-                                  *empty-var-env* *empty-type-env*)
-    '(if (let ((x3 bool t)) t)
-      (let ((x4 scalar 1d0)) 1d0)
-      (let ((x5 scalar 2d0)) 2d0)) "single-assignment 7")
-(is (mini-lang::single-assignment '(let ((x scalar 1d0)) x)
-                                  *empty-var-env* *empty-type-env*)
-    '(let ((x6 scalar 1d0)) x6) "single-assignment 8")
-(is (mini-lang::single-assignment '(let ((x vec3 (1d0 1d0 1d0))) x)
-                                  *empty-var-env* *empty-type-env*)
-    '(let ((x7 vec3 (1d0 1d0 1d0))) x7) "single-assignment 9")
-(is (mini-lang::single-assignment '(f 1d0) *empty-var-env* *empty-type-env*)
-    '(f 1d0) "single-assignment 10")
-(is (mini-lang::single-assignment '(f (let ((x scalar 1d0)) x))
-                                  *empty-var-env* *empty-type-env*)
-    '(f (let ((x8 scalar 1d0)) x8)) "single-assignment 11")
-(is (mini-lang::single-assignment '(+ 1d0 1d0)
-                                  *empty-var-env* *empty-type-env*)
-    '(+ 1d0 1d0) "single-assignment 12")
-(is (mini-lang::single-assignment '(+ 1d0 (let ((x scalar 1d0)) x))
-                                  *empty-var-env* *empty-type-env*)
-    '(+ 1d0 (let ((x9 scalar 1d0)) x9)) "single-assignment 13")
+      (+ (+ 1 1) 1)) "binarize 6")
+(is (mini-lang::type-of-mini-lang '(+ 1d0 1d0 1d0)) 'scalar "binarize 7")
 
 
 (finalize)
