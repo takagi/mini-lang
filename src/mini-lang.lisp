@@ -34,9 +34,11 @@
            :scalar-aref
            :scalar-array-size
            :vec3                        ; vec3 and vec3 array
-           :vec3-x :vec3-y :vec3-z
            :with-vec3
-           :make-vec3
+           :make-vec3 :zero-vec3
+           :vec3-x :vec3-y :vec3-z
+           :vec3= :vec3-negate
+           :vec3-+ :vec3--
            :vec3-array
            :with-vec3-aref
            :make-vec3-array
@@ -171,18 +173,41 @@
     :elements (x y z)
     :simple-array t)
 
+(defun zero-vec3 ()
+  (new-vec3))
+
 (declaim (ftype (function (vec3-array) fixnum) vec3-array-size))
 (defun vec3-array-size (x)
   (vec3-array-dimensions x))
 
+(defun vec3= (a b)
+  (vec3=* (vec3* a) (vec3* b)))
+  
+(def-tuple-op vec3=*
+  ((veca vec3 (x1 y1 z1))
+   (vecb vec3 (x2 y2 z2)))
+  (:return boolean
+           (and (= x1 x2) (= y1 y2) (= z1 z2))))
+
+(defun vec3-negate (x)
+  (make-vec3* (vec3-negate* (vec3* x))))
+
 (defmacro vec3-negate* (x)
   `(vec3-scale* ,x -1d0))
+
+(defun vec3-+ (a b)
+  (make-vec3* (vec3-add* (vec3* a)
+                         (vec3* b))))
 
 (def-tuple-op vec3-add*
   ((veca vec3 (x1 y1 z1))
    (vecb vec3 (x2 y2 z2)))
   (:return vec3
            (vec3-values* (+ x1 x2) (+ y1 y2) (+ z1 z2))))
+
+(defun vec3-- (a b)
+  (make-vec3* (vec3-sub* (vec3* a)
+                         (vec3* b))))
 
 (def-tuple-op vec3-sub*
   ((veca vec3 (x1 y1 z1))

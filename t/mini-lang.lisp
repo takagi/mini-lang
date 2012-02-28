@@ -16,6 +16,27 @@
 (defvar *empty-type-env* (mini-lang::empty-type-environment))
 
 
+;;; test vec3
+
+(defun is-vec3 (got expected &rest args)
+  (apply #'is `(,got ,expected ,@args :test ,#'vec3=)))
+
+(is-vec3 (make-vec3 1d0 1d0 1d0) (make-vec3 1d0 1d0 1d0)
+         "make-vec3 and vec3=")
+
+(is-vec3 (zero-vec3) (make-vec3 0d0 0d0 0d0)
+         "zero-vec3")
+
+(is-vec3 (vec3-negate (make-vec3 1d0 1d0 1d0))
+         (make-vec3 -1d0 -1d0 -1d0) "vec3-negate")
+
+(is-vec3 (vec3-+ (make-vec3 1d0 1d0 1d0) (make-vec3 2d0 2d0 2d0))
+         (make-vec3 3d0 3d0 3d0) "vec3-+")
+
+(is-vec3 (vec3-- (make-vec3 1d0 1d0 1d0) (make-vec3 1d0 1d0 1d0))
+         (make-vec3 0d0 0d0 0d0) "vec3--")
+
+
 ;;; test operation interfaces
 
 (is-expand (setf-scalar x 1d0) (setf x (mini-lang::compile-mini-lang 1d0))
