@@ -18,9 +18,10 @@
 
 ;;; test operation interfaces
 
-(is-expand (setf-scalar x 1d0) (setf x (compile-mini-lang 1d0)) "setf-scalar")
+(is-expand (setf-scalar x 1d0) (setf x (mini-lang::compile-mini-lang 1d0))
+           "setf-scalar")
 (is-expand (setf-scalar-array x i 1d0)
-           (setf (scalar-aref x i) (compile-mini-lang 1d0))
+           (setf (scalar-aref x i) (mini-lang::compile-mini-lang 1d0))
            "setf-scalar-array")
 
 (is-expand (incf-scalar x 1d0) (setf-scalar x (+ x 1d0)) "incf-scalar")
@@ -30,11 +31,11 @@
 
 (is-expand (setf-vec3 x (1d0 1d0 1d0))
            (setf (mini-lang::vec3* x)
-                 (compile-mini-lang (1d0 1d0 1d0)))
+                 (mini-lang::compile-mini-lang (1d0 1d0 1d0)))
            "setf-vec3")
 (is-expand (setf-vec3-array x i (1d0 1d0 1d0))
            (setf (mini-lang::vec3-aref* x i)
-                 (compile-mini-lang (1d0 1d0 1d0)))
+                 (mini-lang::compile-mini-lang (1d0 1d0 1d0)))
            "setf-vec3-array")
 
 (is-expand (incf-vec3 x (1d0 1d0 1d0)) (setf-vec3 x (+ x (1d0 1d0 1d0)))

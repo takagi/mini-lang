@@ -10,8 +10,7 @@
         :cl-tuples-wrapper
         :anaphora
         :alexandria)
-  (:export :compile-mini-lang
-           :bool                        ; external environment references
+  (:export :bool                        ; external environment references
            :int
            :scalar
            :vec3
