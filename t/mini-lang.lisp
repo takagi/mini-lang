@@ -600,8 +600,9 @@
     '((x . scalar)) "add-type-environment")
 (is (mini-lang::lookup-type-environment 'x '((x . scalar))) 'scalar
     "lookup-type-environment 1")
-(is (mini-lang::lookup-type-environment 'x (mini-lang::empty-type-environment))
-    nil "lookup-type-environment 2")
+(is-error (mini-lang::lookup-type-environment
+           'x (mini-lang::empty-type-environment))
+          simple-error "lookup-type-environment 2")
 (is (mini-lang::make-type-environment '(x y) '(scalar vec3))
     '((y . vec3) (x . scalar)) "make-type-environment 1")
 (is (mini-lang::make-type-environment '(x y) '(scalar))
@@ -621,9 +622,9 @@
   (is var-env '((x . x1)) "add-variable-environment 2"))
 (is (mini-lang::lookup-variable-environment 'x '((x . x1)))
     'x1 "lookup-variable-environment 1")
-(is (mini-lang::lookup-variable-environment
-     'x (mini-lang::empty-variable-environment))
-    nil "lookup-variable-environment 2")
+(is-error (mini-lang::lookup-variable-environment
+           'x (mini-lang::empty-variable-environment))
+          simple-error "lookup-variable-environment 2")
 (multiple-value-bind (unique-vars var-env)
     (mini-lang::make-variable-environment '(x y) '(scalar vec3))
   (is unique-vars '(x2 (y3 y4 y5)) "make-variable-environment 1")

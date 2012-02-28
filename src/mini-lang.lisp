@@ -710,9 +710,7 @@
                (t type-of-then-form))))))
 
 (defun type-of-variable (var type-env)
-  (aif (lookup-type-environment var type-env)
-       it
-       (error (format nil "unbound variable: ~A" var))))
+  (lookup-type-environment var type-env))
 
 (defun type-of-user-defined-application (exp)
   (match exp
@@ -751,7 +749,7 @@
 (defun lookup-type-environment (var type-env)
   (match (assoc var type-env)
     ((_ . type) type)
-    (_ nil)))
+    (_ (error (format nil "unbound variable: ~A" var)))))
 
 
 ;;; variable environment
@@ -782,7 +780,7 @@
 (defun lookup-variable-environment (var var-env)
   (match (assoc var var-env)
     ((_ . unique-var) unique-var)
-    (_ nil)))
+    (_ (error (format nil "unbound variable: ~A" var)))))
 
 
 ;; functions for unique variables
