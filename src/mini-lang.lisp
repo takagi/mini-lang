@@ -38,7 +38,9 @@
            :make-vec3 :zero-vec3
            :vec3-x :vec3-y :vec3-z
            :vec3= :vec3-negate
-           :vec3-+ :vec3--
+           :vec3-+ :vec3-- :vec3-* :vec3-/
+           :vec3-norm :normalize-vec3
+           :vec3-dot
            :vec3-array
            :with-vec3-aref
            :make-vec3-array
@@ -156,8 +158,19 @@
 (defmacro vec3-scale%* (k x)
   `(vec3-scale* ,x ,k))
 
+(defun vec3-* (a b)
+  (cond
+    ((and (typep a 'scalar)
+          (typep b 'vec3)) (make-vec3* (vec3-scale%* a (vec3* b))))
+    ((and (typep a 'vec3)
+          (typep b 'scalar)) (make-vec3* (vec3-scale* (vec3* a) b)))
+    (t (error (format nil "invalid argument types: ~A ~A" a b)))))
+
 (defmacro vec3-scale-recip* (x k)
   `(vec3-scale* ,x (/ 1d0 ,k)))
+
+(defun vec3-/ (x k)
+  (make-vec3* (vec3-scale-recip* (vec3* x) k)))
 
 (defmacro vec3-negate* (x)
   `(vec3-scale* ,x -1d0))
@@ -170,11 +183,25 @@
   (:return double-float
            (sqrt (+ (* x x) (* y y) (* z z)))))
 
+(defun vec3-norm (x)
+  (vec3-norm* (vec3* x)))
+
+(def-tuple-op normalize-vec3*
+  ((vec vec3 (x y z)))
+  (:return vec3
+           (vec3-scale-recip* vec (vec3-norm* vec))))
+
+(defun normalize-vec3 (x)
+  (make-vec3* (normalize-vec3* (vec3* x))))
+
 (def-tuple-op vec3-dot*
   ((veca vec3 (x1 y1 z1))
    (vecb vec3 (x2 y2 z2)))
   (:return double-float
            (+ (* x1 x2) (* y1 y2) (* z1 z2))))
+
+(defun vec3-dot (a b)
+  (vec3-dot* (vec3* a) (vec3* b)))
 
 
 ;;; operation interface

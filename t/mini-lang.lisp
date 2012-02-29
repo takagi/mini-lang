@@ -36,6 +36,27 @@
 (is-vec3 (vec3-- (make-vec3 1d0 1d0 1d0) (make-vec3 1d0 1d0 1d0))
          (make-vec3 0d0 0d0 0d0) "vec3--")
 
+(is-vec3 (vec3-* (make-vec3 1d0 1d0 1d0) 2d0)
+         (make-vec3 2d0 2d0 2d0) "vec3-* 1")
+
+(is-vec3 (vec3-* 2d0 (make-vec3 1d0 1d0 1d0))
+         (make-vec3 2d0 2d0 2d0) "vec3-* 2")
+
+(is-error (vec3-* 1d0 1d0)
+          simple-error "vec3-* 3")
+
+(is-vec3 (vec3-/ (make-vec3 2d0 2d0 2d0) 2d0)
+         (make-vec3 1d0 1d0 1d0) "vec3-/")
+
+(is (vec3-norm (make-vec3 2d0 2d0 2d0))
+    (sqrt 12d0) "vec3-norm")
+
+(is-vec3 (normalize-vec3 (make-vec3 2d0 0d0 0d0))
+         (make-vec3 1d0 0d0 0d0) "normalize-vec3")
+
+(is (vec3-dot (make-vec3 1d0 2d0 3d0) (make-vec3 3d0 2d0 1d0))
+    10d0 "vec3-dot")
+
 
 ;;; test operation interfaces
 
