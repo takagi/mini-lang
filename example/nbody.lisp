@@ -58,9 +58,9 @@
       (setf-vec3-array *f* i (0d0 0d0 0d0))
       (dotimes (j n)
         (if (/= i j)
-          (incf-vec3-array *f* i (let ((r vec3 (- (vec3-aref *x* j)
-                                                  (vec3-aref *x* i)))
-                                       (n vec3 (/ r (norm r))))
+          (incf-vec3-array *f* i (let ((r (- (vec3-aref *x* j)
+                                             (vec3-aref *x* i))) ; vec3
+                                       (n (/ r (norm r)))) ; vec3
                                    (* (/ (* (scalar m) (scalar m) (scalar g))
                                          (* (norm r) (norm r)))
                                       n))))))))

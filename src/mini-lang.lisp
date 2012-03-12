@@ -365,34 +365,33 @@
 (defun compile-let% (binds exp var-env type-env)
   (if (null binds)
       (compile-exp exp var-env type-env)
-      (match (car binds)
-        ((_ 'bool _) (compile-single-bind 'bool binds exp var-env type-env))
-        ((_ 'int _) (compile-single-bind 'int binds exp var-env type-env))
-        ((_ 'scalar _) (compile-single-bind 'scalar binds exp var-env type-env))
-        ((_ 'vec3 _) (compile-vec3-bind binds exp var-env type-env)))))
+      (compile-bind binds exp var-env type-env)))
 
-(defun compile-single-bind (type binds exp var-env type-env)
+(defun compile-bind (binds exp var-env type-env)
   (match binds
-    (((var _ val) . rest)
-      (if (eq (type-of-exp val type-env) type)
-          (multiple-value-bind (unique-var var-env2)
-              (add-variable-environment var type var-env)
-            (let ((type-env2 (add-type-environment var type type-env)))
-              `(let ((,unique-var ,(compile-exp val var-env type-env)))
-                 ,(compile-let% rest exp var-env2 type-env2))))
-          (error (format nil "contradict type in let bind: ~A" var))))))
+    (((var val) . rest)
+     (let ((type (type-of-exp val type-env)))
+       (case type
+         (bool (compile-single-bind 'bool var val rest exp var-env type-env))
+         (int (compile-single-bind 'int var val rest exp var-env type-env))
+         (scalar (compile-single-bind 'scalar
+                                      var val rest exp var-env type-env))
+         (vec3 (compile-vec3-bind var val rest exp var-env type-env)))))))
 
-(defun compile-vec3-bind (binds exp var-env type-env)
-  (match binds
-    (((var 'vec3 val) . rest)
-      (if (vec3-type-p val type-env)
-          (multiple-value-bind (unique-vars var-env2)
-              (add-variable-environment var 'vec3 var-env)
-            (let ((type-env2 (add-type-environment var 'vec3 type-env)))
-              `(multiple-value-bind ,unique-vars
-                   ,(compile-exp val var-env type-env)
-                 ,(compile-let% rest exp var-env2 type-env2))))
-          (error (format nil "contradict type in let bind: ~A" var))))))
+(defun compile-single-bind (type var val rest exp var-env type-env)
+  (multiple-value-bind (unique-var var-env2)
+      (add-variable-environment var type var-env)
+    (let ((type-env2 (add-type-environment var type type-env)))
+      `(let ((,unique-var ,(compile-exp val var-env type-env)))
+         ,(compile-let% rest exp var-env2 type-env2)))))
+
+(defun compile-vec3-bind (var val rest exp var-env type-env)
+  (multiple-value-bind (unique-vars var-env2)
+      (add-variable-environment var 'vec3 var-env)
+    (let ((type-env2 (add-type-environment var 'vec3 type-env)))
+      `(multiple-value-bind ,unique-vars
+           ,(compile-exp val var-env type-env)
+         ,(compile-let% rest exp var-env2 type-env2)))))
 
 
 ;;; if expression
@@ -698,27 +697,14 @@
 (defun type-of-let% (binds exp type-env)
   (if (null binds)
       (type-of-exp exp type-env)
-      (match (car binds)
-        ((_ 'bool _) (type-of-single-bind 'bool binds exp type-env))
-        ((_ 'int _) (type-of-single-bind 'int binds exp type-env))
-        ((_ 'scalar _) (type-of-single-bind 'scalar binds exp type-env))
-        ((_ 'vec3 _) (type-of-vec3-bind binds exp type-env)))))
+      (type-of-bind binds exp type-env)))
 
-(defun type-of-single-bind (type binds exp type-env)
+(defun type-of-bind (binds exp type-env)
   (match binds
-    (((var _ val) . rest)
-      (if (eq (type-of-exp val type-env) type)
-          (let ((type-env2 (add-type-environment var type type-env)))
-            (type-of-let% rest exp type-env2))
-          (error (format nil "contradict type in let bind: ~A" var))))))
-
-(defun type-of-vec3-bind (binds exp type-env)
-  (match binds
-    (((var 'vec3 val) . rest)
-      (if (vec3-type-p val type-env)
-          (let ((type-env2 (add-type-environment var 'vec3 type-env)))
-            (type-of-let% rest exp type-env2))
-          (error (format nil "contradict type in let bind: ~A" var))))))
+    (((var val) . rest)
+     (let* ((type (type-of-exp val type-env))
+            (type-env2 (add-type-environment var type type-env)))
+       (type-of-let% rest exp type-env2)))))
 
 (defun type-of-if (exp type-env)
   (match exp

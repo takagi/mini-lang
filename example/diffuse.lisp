@@ -47,19 +47,19 @@
       (dotimes (jx nx)
         (let ((j (index nx jx jy)))
           (setf-scalar (scalar-aref *fn* j)
-                       (let ((fcc scalar (scalar-aref *f* j))
-                             (fcw scalar (if (= (int jx) 0)
-                                             fcc
-                                             (scalar-aref *f* (- j 1))))
-                             (fce scalar (if (= (int jx) (- (int nx) 1))
-                                             fcc
-                                             (scalar-aref *f* (+ j 1))))
-                             (fcs scalar (if (= (int jy) 0)
-                                             fcc
-                                             (scalar-aref *f* (- j nx))))
-                             (fcn scalar (if (= (int jy) (- (int ny) 1))
-                                             fcc
-                                             (scalar-aref *f* (+ j nx)))))
+                       (let ((fcc (scalar-aref *f* j)) ; scalar
+                             (fcw (if (= (int jx) 0)
+                                      fcc
+                                      (scalar-aref *f* (- j 1)))) ; scalar
+                             (fce (if (= (int jx) (- (int nx) 1))
+                                      fcc
+                                      (scalar-aref *f* (+ j 1)))) ; scalar
+                             (fcs (if (= (int jy) 0)
+                                      fcc
+                                      (scalar-aref *f* (- j nx)))) ; scalar
+                             (fcn (if (= (int jy) (- (int ny) 1))
+                                      fcc
+                                      (scalar-aref *f* (+ j nx))))) ; scalar
                          (+ (* (scalar c0) (+ fce fcw))
                             (* (scalar c1) (+ fcn fcs))
                             (* (scalar c2) fcc)))))))))

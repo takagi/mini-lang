@@ -239,7 +239,7 @@
                                        (+ (vec3-z init-min) d (* z d)))))))))
 
 (define-function poly6-kernel ((vec3 x))
-  (let ((r scalar (norm x)))
+  (let ((r (norm x)))                   ; scalar
     (if (<= r (scalar h))
         (* (/ 315d0
               (* 64d0 (scalar pi) (expt (scalar h) 9)))
@@ -247,7 +247,7 @@
         0d0)))
 
 (define-function grad-spiky-kernel ((vec3 x))
-  (let ((r scalar (norm x)))
+  (let ((r (norm x)))                   ; scalar
     (if (<= r (scalar h))
         (* (/ -45d0 (* (scalar pi) (expt (scalar h) 6)))
            (expt (- (scalar h) r) 2)   
@@ -255,7 +255,7 @@
         (vec3 0d0 0d0 0d0))))
 
 (define-function rap-visc-kernel ((vec3 x))
-  (let ((r scalar (norm x)))
+  (let ((r (norm x)))                   ; scalar
     (if (<= r (scalar h))
         (* (/ 45d0 (* (scalar pi) (expt (scalar h) 6)))
            (- (scalar h) r))
@@ -267,9 +267,9 @@
     (setf-scalar-array rho i 0d0)
     (for-neighbors nbr (x i) j
       (incf-scalar-array rho i
-        (let ((dr vec3 (* (- (vec3-aref x i)
-                             (vec3-aref x j))
-                          (scalar simscale))))
+        (let ((dr (* (- (vec3-aref x i)
+                        (vec3-aref x j))
+                     (scalar simscale)))) ; vec3
           (* (scalar pmass) (poly6-kernel dr)))))))
 
 (defun update-pressure ()
@@ -280,15 +280,15 @@
                                   (scalar intstiff)))))
 
 (define-function pressure-term ()
-  (let ((dr vec3 (* (- (vec3-aref x i) (vec3-aref x j))
-                    (scalar simscale))))
+  (let ((dr (* (- (vec3-aref x i) (vec3-aref x j))
+               (scalar simscale))))     ; vec3
     (* (* (- (scalar pmass)) (/ (+ (scalar-aref prs i) (scalar-aref prs j))
                                 (* 2d0 (scalar-aref rho j))))
        (grad-spiky-kernel dr))))
 
 (define-function viscosity-term ()
-  (let ((dr vec3 (* (- (vec3-aref x i) (vec3-aref x j))
-                    (scalar simscale))))
+  (let ((dr (* (- (vec3-aref x i) (vec3-aref x j))
+               (scalar simscale))))     ; vec3
     (* (* (scalar visc) (/ (* (scalar pmass)
                               (- (vec3-aref v j) (vec3-aref v i)))
                            (scalar-aref rho j)))
@@ -305,10 +305,10 @@
              (viscosity-term)))))))
 
 (define-function wall ((scalar d) (vec3 norm) (vec3 a))
-  (let ((diff scalar (- (* 2d0 (scalar radius))
-                        (* d (scalar simscale))))
-        (adj scalar (- (* (scalar extstiff) diff)
-                       (* (scalar extdamp) (dot norm (vec3-aref *v* i))))))
+  (let ((diff (- (* 2d0 (scalar radius))
+                 (* d (scalar simscale)))) ; scalar
+        (adj (- (* (scalar extstiff) diff)
+                (* (scalar extdamp) (dot norm (vec3-aref *v* i)))))) ; scalar
     (if (> diff (scalar epsilon))
         (+ a (* adj norm))
         a)))
@@ -344,7 +344,7 @@
         a))
 
 (define-function accel-limit ((vec3 a))
-  (let ((speed scalar (norm a)))
+  (let ((speed (norm a)))               ; scalar
     (if (> speed (scalar limit))
         (* (/ (scalar limit) speed) a)
         a)))
@@ -361,7 +361,8 @@
   (declare (optimize (speed 3) (safety 0)))
   (for-vec3-array *v* i
     (incf-vec3-array *v* i
-      (let ((a vec3 (+ (/ (vec3-aref *f* i) (scalar-aref *rho* i)) (vec3 g))))
+      (let ((a (+ (/ (vec3-aref *f* i) (scalar-aref *rho* i))
+                  (vec3 g))))           ; vec3
         (* (boundary a) (scalar dt))))))
 
 (defun update-position ()

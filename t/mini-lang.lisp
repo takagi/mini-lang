@@ -180,60 +180,47 @@
 (is (mini-lang::let-exp '(let ((x scalar 1d0)) x)) 'x "let-exp")
 
 (mini-lang::reset-unique-variables-counter)
-(is (mini-lang::compile-let% '((x bool t)) '1d0
+(is (mini-lang::compile-let% '((x t)) '1d0
                              *empty-var-env* *empty-type-env*)
     '(let ((x1 t)) 1d0) "compile-let% 1")
-(is (mini-lang::compile-let% '((x int 1)) 1 *empty-var-env* *empty-type-env*)
+(is (mini-lang::compile-let% '((x 1)) 1 *empty-var-env* *empty-type-env*)
     `(let ((x2 1)) 1) "compile-let% 2")
-(is (mini-lang::compile-let% '((x scalar 1d0)) '1d0
+(is (mini-lang::compile-let% '((x 1d0)) '1d0
                              *empty-var-env* *empty-type-env*)
     '(let ((x3 1d0)) 1d0) "compile-let% 3")
-(is (mini-lang::compile-let% '((x vec3 (1d0 1d0 1d0))) '1d0
+(is (mini-lang::compile-let% '((x (1d0 1d0 1d0))) '1d0
                              *empty-var-env* *empty-type-env*)
     '(multiple-value-bind (x4 x5 x6) (mini-lang::vec3-values* 1d0 1d0 1d0)
        1d0) "compile-let% 4")
 
-(is-error (mini-lang::compile-let% '((x bool 1d0)) 'x 
-                                   *empty-var-env* *empty-type-env*)
-          simple-error "compile-let% 5")
-(is-error (mini-lang::compile-let% '((x int 1d0)) 'x
-                                   *empty-var-env* *empty-type-env*)
-          simple-error "compile-let% 6")
-(is-error (mini-lang::compile-let% '((x scalar t)) 'x
-                                   *empty-var-env* *empty-type-env*)
-          simple-error "compile-let% 7")
-(is-error (mini-lang::compile-let% '((x vec3 1d0)) 'x
-                                   *empty-var-env* *empty-type-env*)
-          simple-error "compile-let% 8")
-
-(is (mini-lang::compile-let% '((x bool t)) 'x *empty-var-env* *empty-type-env*)
+(is (mini-lang::compile-let% '((x t)) 'x *empty-var-env* *empty-type-env*)
     '(let ((x7 t)) x7) "compile-let% 9")
-(is (mini-lang::compile-let% '((x int 1)) 'x *empty-var-env* *empty-type-env*)
+(is (mini-lang::compile-let% '((x 1)) 'x *empty-var-env* *empty-type-env*)
     '(let ((x8 1)) x8) "compile-let% 10")
-(is (mini-lang::compile-let% '((x scalar 1d0)) 'x
+(is (mini-lang::compile-let% '((x 1d0)) 'x
                              *empty-var-env* *empty-type-env*)
     '(let ((x9 1d0)) x9) "compile-let% 11")
-(is (mini-lang::compile-let% '((x vec3 (1d0 1d0 1d0))) 'x
+(is (mini-lang::compile-let% '((x (1d0 1d0 1d0))) 'x
                              *empty-var-env* *empty-type-env*)
     '(multiple-value-bind (x10 x11 x12) (mini-lang::vec3-values* 1d0 1d0 1d0)
        (mini-lang::vec3-values* x10 x11 x12)) "compile-let% 12")
 
 (mini-lang::reset-unique-variables-counter)
-(is (mini-lang::compile-let '(let ((x bool t)) x)
+(is (mini-lang::compile-let '(let ((x t)) x)
                             *empty-var-env* *empty-type-env*)
     '(let ((x1 t)) x1) "compile-let 1")
-(is (mini-lang::compile-let '(let ((x int 1)) x)
+(is (mini-lang::compile-let '(let ((x 1)) x)
                             *empty-var-env* *empty-type-env*)
     '(let ((x2 1)) x2) "compile-let 2")
-(is (mini-lang::compile-let '(let ((x scalar 1d0)) x)
+(is (mini-lang::compile-let '(let ((x 1d0)) x)
                             *empty-var-env* *empty-type-env*)
     '(let ((x3 1d0)) x3) "compile-let 3")
-(is (mini-lang::compile-let '(let ((x vec3 (1d0 1d0 1d0))) x)
+(is (mini-lang::compile-let '(let ((x (1d0 1d0 1d0))) x)
                             *empty-var-env* *empty-type-env*)
     '(multiple-value-bind (x4 x5 x6) (mini-lang::vec3-values* 1d0 1d0 1d0)
        (mini-lang::vec3-values* x4 x5 x6)) "compile-let 4")
-(is (mini-lang::compile-let '(let ((y scalar 1d0))
-                               (let ((x vec3 (1d0 1d0 1d0)))
+(is (mini-lang::compile-let '(let ((y 1d0))
+                               (let ((x (1d0 1d0 1d0)))
                                  y))
                             *empty-var-env* *empty-type-env*)
     '(let ((y7 1d0))
@@ -359,6 +346,10 @@
                                                        *empty-var-env*
                                                        *empty-type-env*)
           simple-error "compile-user-defined-application 2")
+(is-error (mini-lang::compile-exp '(let ((x t))
+                                    (f 1d0 x))
+                                  *empty-var-env* *empty-type-env*)
+          simple-error "compile-user-defined-application 3")
 
 (mini-lang::reset-unique-variables-counter)
 (define-function g ((scalar x) (scalar y))
@@ -403,7 +394,7 @@
 (mini-lang::reset-unique-variables-counter)
 (define-function f ((scalar x))
   x)
-(is (mini-lang::compile-exp '(let ((x scalar 1d0))
+(is (mini-lang::compile-exp '(let ((x 1d0))
                               (+ x (f x)))
                             *empty-var-env* *empty-type-env*)
     '(let ((x2 1.0d0))
@@ -413,9 +404,9 @@
 
 (mini-lang::reset-unique-variables-counter)
 (define-function f ((scalar x))
-  (let ((x scalar x))
+  (let ((x x))
     x))
-(is (mini-lang::compile-exp '(let ((x scalar 1d0))
+(is (mini-lang::compile-exp '(let ((x 1d0))
                               (+ x (f x)))
                             *empty-var-env* *empty-type-env*)
     '(let ((x3 1d0))
@@ -541,25 +532,16 @@
 (is (mini-lang::type-of-external-environment-reference '(vec3-aref x i))
     'vec3 "type-of-external-environment-reference 7")
 
-(is (mini-lang::type-of-let '(let ((x bool t)) x) *empty-type-env*)
+(is (mini-lang::type-of-let '(let ((x t)) x) *empty-type-env*)
     'bool "type-of-let 1")
-(is (mini-lang::type-of-let '(let ((x int 1)) x) *empty-type-env*)
+(is (mini-lang::type-of-let '(let ((x 1)) x) *empty-type-env*)
     'int "type-of-let 2")
-(is (mini-lang::type-of-let '(let ((x scalar 1d0)) x) *empty-type-env*)
+(is (mini-lang::type-of-let '(let ((x 1d0)) x) *empty-type-env*)
     'scalar "type-of-let 3")
 (is (let ((type-env (mini-lang::add-type-environment 'y 'vec3
                                                      *empty-type-env*)))
-      (mini-lang::type-of-let '(let ((x scalar 1d0)) y) type-env))
+      (mini-lang::type-of-let '(let ((x 1d0)) y) type-env))
     'vec3 "type-of-let 4")
-
-(is-error (mini-lang::type-of-let '(let ((x bool 1d0)) x) *empty-type-env*)
-          simple-error "type-of-let 5")
-(is-error (mini-lang::type-of-let '(let ((x int 1d0)) x) *empty-type-env*)
-          simple-error "type-of-let 6")
-(is-error (mini-lang::type-of-let '(let ((x scalar t)) x) *empty-type-env*)
-          simple-error "type-of-let 7")
-(is-error (mini-lang::type-of-let '(let ((x vec3 1d0)) x) *empty-type-env*)
-          simple-error "type-of-let 8")
 
 (is (let ((type-env (mini-lang::add-type-environment 'x 'bool
                                                      *empty-type-env*)))
