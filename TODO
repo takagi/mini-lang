@@ -1,6 +1,8 @@
 ;;;
 ;;; ToDo:
 ;;; * let expressions really need types for each bound?
+;;; * int type is not needed anymore
+;;; * bool type is not needed except in test-form of if-expressions
 ;;; * lacks some built-in functions to export?
 ;;; * problem with eval-when's situations that slime-compile-defun on tests for define-functions fails though slime-compile-and-load-file on them succeeds
 ;;; * add no recursion check in define-function because mini-lang does not permit recursion
