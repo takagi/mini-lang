@@ -1,6 +1,7 @@
 ;;;
 ;;; ToDo:
-;;; * let expressions really need types for each bound?
+;;; * not inlining on function application, instead define functions using defun and call them with expanding tuple arguments
+;;; * make functions to be able to take external variables
 ;;; * int type is not needed anymore
 ;;; * bool type is not needed except in test-form of if-expressions
 ;;; * lacks some built-in functions to export?
@@ -11,6 +12,7 @@
 ;;; * add quote functionality that enables using external common lisp expressions
 ;;;
 ;;; Done:
+;;; * let expressions really need types for each bound?
 ;;; * add descriptions to the tests
 ;;; * add tests on the selectors of user-defined-function
 ;;; * explicitly implement lexical scoping independent of inferior common lisp's one
