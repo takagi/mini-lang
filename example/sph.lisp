@@ -155,17 +155,7 @@
      (declare (type (unsigned-byte 32) ,var))
      ,@body))
 
-(defmacro for-neighbors (nbr pos var &rest body)
-  (match pos
-    ((x y z) `(for-neighbors% ,nbr ,x ,y ,z ,var ,@body))
-    ((xs idx) (with-gensyms (x y z)
-                `(with-vec3-aref (,xs ,idx (,x ,y ,z))
-                   (for-neighbors% ,nbr ,x ,y ,z ,var ,@body))))
-    ((val) (with-gensyms (x y z)
-             `(with-vec3 ,val (,x ,y ,z)
-                (for-neighbors% ,nbr ,x ,y ,z ,var ,@body))))))
-
-(defmacro for-neighbors% (nbr x y z var &rest body)
+(defmacro for-neighbors ((var nbr (x y z)) &body body)
   (with-gensyms (i j k di dj dk)
     `(multiple-value-bind (,i ,j ,k)
          (neighbor-map-pos-to-index ,nbr ,x ,y ,z)
@@ -265,12 +255,13 @@
   (declare (optimize (speed 3) (safety 0)))
   (for-scalar-array rho i
     (setf-scalar-array rho i 0d0)
-    (for-neighbors nbr (x i) j
-      (incf-scalar-array rho i
-        (let ((dr (* (- (vec3-aref x i)
-                        (vec3-aref x j))
-                     (scalar simscale)))) ; vec3
-          (* (scalar pmass) (poly6-kernel dr)))))))
+    (with-vec3-aref (x i (x0 x1 x2))
+      (for-neighbors (j nbr (x0 x1 x2))
+        (incf-scalar-array rho i
+          (let ((dr (* (- (vec3-aref x i)
+                          (vec3-aref x j))
+                       (scalar simscale)))) ; vec3
+            (* (scalar pmass) (poly6-kernel dr))))))))
 
 (defun update-pressure ()
   (declare (optimize (speed 3) (safety 0)))
@@ -298,11 +289,12 @@
   (declare (optimize (speed 3) (safety 0)))
   (for-vec3-array f i
     (setf-vec3-array f i (vec3 0d0 0d0 0d0))
-    (for-neighbors nbr (x i) j
-      (when (/= i j)
-        (incf-vec3-array f i
-          (+ (pressure-term)
-             (viscosity-term)))))))
+    (with-vec3-aref (x i (x0 x1 x2))
+      (for-neighbors (j nbr (x0 x1 x2))
+        (when (/= i j)
+          (incf-vec3-array f i
+            (+ (pressure-term)
+               (viscosity-term))))))))
 
 (define-function wall ((scalar d) (vec3 norm) (vec3 a))
   (let ((diff (- (* 2d0 (scalar radius))
