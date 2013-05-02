@@ -239,7 +239,7 @@
         (error (format nil "invalid type of expression: ~A" exp)))))
 
 (defmacro incf-vec3 (var exp)
-  `(setf-vec3 ,var (+ ,var ,exp)))
+  `(setf-vec3 ,var (+ (vec3 ,var) ,exp)))
 
 (defmacro setf-vec3-array (var i exp)
   (let ((type (type-of-mini-lang exp)))
@@ -589,6 +589,7 @@
     dot (((vec3 vec3) scalar vec3-dot*))
     exp (((scalar) scalar exp))
     expt (((scalar int) scalar expt))
+    sqrt (((scalar) scalar sqrt))
     = (((int int) bool =))
     <= (((scalar scalar) bool <=))
     > (((scalar scalar) bool >))
