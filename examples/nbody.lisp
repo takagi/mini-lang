@@ -4,11 +4,11 @@
 |#
 
 (in-package :cl-user)
-(defpackage mini-lang-example.nbody
+(defpackage mini-lang-examples.nbody
   (:use :cl
         :mini-lang)
   (:export :main))
-(in-package :mini-lang-example.nbody)
+(in-package :mini-lang-examples.nbody)
 
 (defvar *x*)
 (defvar *v*)

@@ -4,15 +4,15 @@
 |#
 
 (in-package :cl-user)
-(defpackage mini-lang-example-asd
+(defpackage mini-lang-examples-asd
   (:use :cl :asdf))
-(in-package :mini-lang-example-asd)
+(in-package :mini-lang-examples-asd)
 
-(defsystem mini-lang-example
+(defsystem mini-lang-examples
   :author "Masayuki Takagi"
   :license "LLGPL"
   :depends-on (:mini-lang :imago)
-  :components ((:module "example"
+  :components ((:module "examples"
                 :components
                 ((:file "nbody")
                  (:file "diffuse")

@@ -4,11 +4,11 @@
 |#
 
 (in-package :cl-user)
-(defpackage mini-lang-example.diffuse
+(defpackage mini-lang-examples.diffuse
   (:use :cl
         :mini-lang)
   (:export :main))
-(in-package :mini-lang-example.diffuse)
+(in-package :mini-lang-examples.diffuse)
 
 (defvar *f*)
 (defvar *fn*)

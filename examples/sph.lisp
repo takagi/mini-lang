@@ -5,13 +5,13 @@
 
 
 (in-package :cl-user)
-(defpackage mini-lang-example.sph
+(defpackage mini-lang-examples.sph
   (:use :cl
         :cl-pattern
         :mini-lang
         :alexandria)
   (:export :main))
-(in-package :mini-lang-example.sph)
+(in-package :mini-lang-examples.sph)
 
 
 ;;; Constants
