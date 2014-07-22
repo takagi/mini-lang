@@ -50,7 +50,7 @@
            :define-function
            :norm                        ; built in functions
            :dot
-           :_expt
+           :expt%
            ))
 (in-package :mini-lang)
 
@@ -594,7 +594,7 @@
     dot (((vec3 vec3) scalar vec3-dot*))
     exp (((scalar) scalar exp))
     expt (((scalar scalar) scalar expt))
-    _expt (((scalar int) scalar pow))
+    expt% (((scalar int) scalar pow))
     sqrt (((scalar) scalar sqrt))
     = (((int int) bool =))
     <= (((scalar scalar) bool <=))

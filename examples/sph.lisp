@@ -26,7 +26,7 @@
 (defconstant pmass 0.00020543d0)
 (defconstant restdensity 600.0d0)
 (defconstant intstiff 3.0d0)
-(defconstant pdist (_expt (/ pmass restdensity) (/ 1 3)))
+(defconstant pdist (expt (/ pmass restdensity) (/ 1 3)))
 (defconstant visc 0.2d0)
 (defconstant radius 0.004d0)
 (defconstant extstiff 10000d0)
@@ -232,22 +232,22 @@
   (let ((r (norm x)))                   ; scalar
     (if (<= r (scalar h))
         (* (/ 315d0
-              (* 64d0 (scalar pi) (_expt (scalar h) 9)))
-           (_expt (- (_expt (scalar h) 2) (_expt r 2)) 3))
+              (* 64d0 (scalar pi) (expt% (scalar h) 9)))
+           (expt% (- (expt% (scalar h) 2) (expt% r 2)) 3))
         0d0)))
 
 (define-function grad-spiky-kernel ((vec3 x))
   (let ((r (norm x)))                   ; scalar
     (if (<= r (scalar h))
-        (* (/ -45d0 (* (scalar pi) (_expt (scalar h) 6)))
-           (_expt (- (scalar h) r) 2)
+        (* (/ -45d0 (* (scalar pi) (expt% (scalar h) 6)))
+           (expt% (- (scalar h) r) 2)
            (/ x r))
         (vec3 0d0 0d0 0d0))))
 
 (define-function rap-visc-kernel ((vec3 x))
   (let ((r (norm x)))                   ; scalar
     (if (<= r (scalar h))
-        (* (/ 45d0 (* (scalar pi) (_expt (scalar h) 6)))
+        (* (/ 45d0 (* (scalar pi) (expt% (scalar h) 6)))
            (- (scalar h) r))
         0d0)))
 
