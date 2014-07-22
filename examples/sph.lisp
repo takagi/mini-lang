@@ -16,10 +16,6 @@
 
 ;;; Constants
 
-(defconstant nx 6)
-(defconstant ny 10)
-(defconstant nz 10)
-(defconstant n (* nx ny nz))
 (defconstant dt 0.004d0)
 (defconstant h 0.01d0)
 (defconstant simscale 4d-3)
@@ -37,6 +33,7 @@
 (defvar box-min (make-vec3 0d0 0d0 -10d0))   ; constant
 (defvar box-max (make-vec3 20d0 50d0 10d0))  ; constant
 (defvar init-min (make-vec3 0d0 0d0 -10d0))  ; constant
+(defvar init-max (make-vec3 10d0 20d0 10d0)) ; constant
 
 
 ;;; Grobal variables
@@ -168,8 +165,8 @@
 
 ;;; Print functions
 
-(defun print-number-of-particles ()
-  (format t "~A particles~%" N))
+(defun print-number-of-particles (particles)
+  (format t "~A particles~%" (length particles)))
 
 (defun print-step (i)
   (format t "processing ~A ...~%" (file-name i)))
@@ -201,32 +198,41 @@
                          "}~%")
             x y z)))
 
-(defun output (i)
+(defun output (i particles)
   (with-open-file (out (file-name i)
                        :direction :output
                        :if-exists :supersede)
     (princ (head) out)
-    (dotimes (i N)
-      (princ (sphere i) out))))
+    (let ((n (length particles)))
+      (dotimes (i n)
+        (princ (sphere i) out)))))
 
 
 ;;; Main
 
-(defun initialize ()
-  (setf *x* (make-vec3-array N))
-  (setf *v* (make-vec3-array N))
-  (setf *f* (make-vec3-array N))
-  (setf *rho* (make-scalar-array N))
-  (setf *prs* (make-scalar-array N))
-  (setf *nbr* (make-neighbor-map box-min box-max (/ h simscale)))
-  (dotimes (x NX)
-    (dotimes (y NY)
-      (dotimes (z NZ)
-        (let* ((d (* (/ pdist simscale) 0.95))
-               (i (+ x (* y NX) (* z NX NY))))
-          (setf-vec3-array *x* i (vec3 (+ (vec3-x init-min) d (* x d))
-                                       (+ (vec3-y init-min) d (* y d))
-                                       (+ (vec3-z init-min) d (* z d)))))))))
+(defun initial-condition ()
+  (with-vec3 init-min (init-min-x init-min-y init-min-z)
+    (with-vec3 init-max (init-max-x init-max-y init-max-z)
+      (let ((d (* (/ pdist simscale) 0.95)))
+        (let (result)
+          (loop for x from (+ init-min-x d) to (- init-max-x d) by d do
+            (loop for y from (+ init-min-y d) to (- init-max-y d) by d do
+              (loop for z from (+ init-min-z d) to (- init-max-z d) by d do
+                (push (list x y z) result))))
+          result)))))
+
+(defun initialize (particles)
+  (let ((n (length particles)))
+    (setf *x* (make-vec3-array n))
+    (setf *v* (make-vec3-array n))
+    (setf *f* (make-vec3-array n))
+    (setf *rho* (make-scalar-array n))
+    (setf *prs* (make-scalar-array n))
+    (setf *nbr* (make-neighbor-map box-min box-max (/ h simscale))))
+  (loop for (x y z) in particles
+        for i from 0
+     do (setf-vec3-array *x* i (vec3 x y z))
+        (setf-vec3-array *v* i (vec3 0d0 0d0 0d0))))
 
 (define-function poly6-kernel ((vec3 x))
   (let ((r (norm x)))                   ; scalar
@@ -367,17 +373,19 @@
   (require :sb-sprof))
 
 (defun main (max-loop)
-  (print-number-of-particles)
-  (initialize)
-  (dotimes (i max-loop)
-    ; (output i)
-    ; (print-step i)
-    (update-neighbor-map *nbr* *x*)
-    (update-density *x* *rho* *nbr*)
-    (update-pressure)
-    (update-force *x* *v* *f* *rho* *prs* *nbr*)
-    (update-velocity)
-    (update-position)))
+  (let ((particles (initial-condition)))
+    (print-number-of-particles particles)
+    (initialize particles)
+    (time
+      (dotimes (i max-loop)
+        ; (output i particles)
+        ; (print-step i)
+        (update-neighbor-map *nbr* *x*)
+        (update-density *x* *rho* *nbr*)
+        (update-pressure)
+        (update-force *x* *v* *f* *rho* *prs* *nbr*)
+        (update-velocity)
+        (update-position)))))
 
 (defun profile ()
   (sb-profile:reset)
