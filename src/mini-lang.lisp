@@ -54,6 +54,10 @@
 (in-package :mini-lang)
 
 
+(defmacro pow (x n)
+  (check-type n fixnum)
+  `(* ,@(loop repeat n collect x)))
+
 ;;; binarize
 
 (defun binarize (exp)
@@ -588,7 +592,8 @@
     norm (((vec3) scalar vec3-norm*))
     dot (((vec3 vec3) scalar vec3-dot*))
     exp (((scalar) scalar exp))
-    expt (((scalar int) scalar expt))
+    expt (((scalar scalar) scalar expt))
+    _expt (((scalar int) scalar pow))
     sqrt (((scalar) scalar sqrt))
     = (((int int) bool =))
     <= (((scalar scalar) bool <=))
