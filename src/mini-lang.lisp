@@ -50,6 +50,7 @@
            :define-function
            :norm                        ; built in functions
            :dot
+           :_expt
            ))
 (in-package :mini-lang)
 
