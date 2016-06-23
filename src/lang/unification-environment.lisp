@@ -44,7 +44,6 @@
 
 (defun %query-unification-environment (size uenv)
   ;; For vector type size.
-  (print size)
   (assert (mini-lang.lang.type::vector-type-size-p size))
   (if (type-variable-p size)
       (destructuring-bind (lhs rhs subst) uenv
