@@ -12,46 +12,15 @@
 
 
 ;;
-;; scalar types
-
-(defun make-int-array (dimensions &key initial-element)
-  (make-array dimensions :initial-element (or initial-element 0)
-                         :element-type 'fixnum))
-(export 'make-int-array)
-
-(defun int-array-dimensions (array)
-  (array-dimension array 0))
-(export 'int-array-dimensions)
-
-(defun make-float-array (dimensions &key initial-element)
-  (make-array dimensions :initial-element (or initial-element 0.0)
-                         :element-type 'single-float))
-(export 'make-float-array)
-
-(defun float-array-dimensions (array)
-  (array-dimension array 0))
-(export 'float-array-dimensions)
-
-(defun make-double-array (dimensions &key initial-element)
-  (make-array dimensions :initial-element (or initial-element 0.0d0)
-                         :element-type 'double-float))
-(export 'make-double-array)
-
-(defun double-array-dimensions (array)
-  (array-dimension array 0))
-(export 'double-array-dimensions)
-
-
-;;
-;; vector type helpers
+;; Helpers
 
 (eval-when (:compile-toplevel)
 
   (defun type-base-type (type)
     (ecase type
-      ((int2 int3 int4) 'fixnum)
-      ((float2 float3 float4) 'single-float)
-      ((double2 double3 double4) 'double-float)))
+      ((int int2 int3 int4) 'fixnum)
+      ((float float2 float3 float4) 'single-float)
+      ((double double2 double3 double4) 'double-float)))
 
   (defun type-size (type)
     (ecase type
@@ -119,7 +88,48 @@
 
 
 ;;
-;; vector types
+;; Scalar types
+
+(eval-when (:compile-toplevel)
+  (defun define-scalar-type-form (type)
+    `(progn
+       ;; Define and export FOO type.
+       ;(deftype ,type ()
+       ;  ',(type-base-type type))
+       ;(export ',type)
+       ;; Define and export FOO-ARRAY type.
+       (deftype ,(type-array type) ()
+         '(simple-array ,(type-base-type type) *))
+       (export ',(type-array type))
+       ;; Define and export MAKE-FOO-ARRAY.
+       (defun ,(type-make-array type) (dimensions &key initial-element)
+         (make-array dimensions
+                     :initial-element (or initial-element
+                                          ,(type-initial-element type))
+                     :element-type ',(type-base-type type)))
+       (export ',(type-make-array type))
+       ;; Define and export FOO-AREF*
+       (defmacro ,(type-aref* type) (array array-index)
+         `(aref ,array ,array-index))
+       (export ',(type-aref* type))
+       ;; Define and export FOO-ARRAY-DIMENSIONS.
+       (defun ,(type-array-dimensions type) (array)
+         (array-dimension array 0))
+       (export ',(type-array-dimensions type))
+       (declaim (ftype (function (,(type-array type)) fixnum)
+                       ,(type-array-dimensions type)))
+       )))
+
+(defmacro define-scalar-type (type)
+  (define-scalar-type-form type))
+
+(define-scalar-type int)
+(define-scalar-type float)
+(define-scalar-type double)
+
+
+;;
+;; Vector types
 
 (eval-when (:compile-toplevel)
   (defun define-tuple-type-form (type)

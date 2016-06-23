@@ -35,20 +35,19 @@
            ;; API
            :eval-mini-lang
            :compile-mini-lang
-           :make-int-array :make-float-array :make-double-array
-           :int-array-dimensions :float-array-dimensions
-           :double-array-dimensions
-           :make-int2-array :make-int3-array :make-int4-array
-           :make-float2-array :make-float3-array :make-float4-array
-           :make-double2-array :make-double3-array :make-double4-array
-           :int2-array-dimensions :float2-array-dimensions
-           :double2-array-dimensions
-           :int3-array-dimensions :float3-array-dimensions
-           :double3-array-dimensions
-           :int4-array-dimensions :float4-array-dimensions
-           :double4-array-dimensions
-           :int2-aref* :int3-aref* :int4-aref*
-           :float2-aref* :float3-aref* :float4-aref*
-           :double2-aref* :double3-aref* :double4-aref*
+           :make-int-array :make-int2-array :make-int3-array :make-int4-array
+           :make-float-array :make-float2-array :make-float3-array
+           :make-float4-array
+           :make-double-array :make-double2-array :make-double3-array
+           :make-double4-array
+           :int-aref* :int2-aref* :int3-aref* :int4-aref*
+           :float-aref* :float2-aref* :float3-aref* :float4-aref*
+           :double-aref* :double2-aref* :double3-aref* :double4-aref*
+           :int-array-dimensions :int2-array-dimensions :int3-array-dimensions
+           :int4-array-dimensions
+           :float-array-dimensions :float2-array-dimensions
+           :float3-array-dimensions :float4-array-dimensions
+           :double-array-dimensions :double2-array-dimensions
+           :double3-array-dimensions :double4-array-dimensions
            ))
 (in-package :mini-lang)
