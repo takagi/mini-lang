@@ -6,6 +6,7 @@
 (in-package :cl-user)
 (defpackage mini-lang.lang.compile
   (:use :cl
+        :mini-lang.lang.data
         :mini-lang.lang.type
         :mini-lang.lang.built-in
         :mini-lang.lang.syntax
@@ -42,7 +43,7 @@
                   ((scalar-type-p type)
                    (if (variable-environment-exists-p form venv)
                        (query-variable-environment form venv)
-                       form))
+                       `(the ,(compile-type type) ,form)))
                   ((vector-type-p type)
                    (if (variable-environment-exists-p form venv)
                        (let ((vector-values* (vector-type-values* type))
@@ -53,7 +54,7 @@
                   ((array-type-p type)
                    (if (variable-environment-exists-p form venv)
                        (query-variable-environment form venv)
-                       form))
+                       `(the ,(compile-type type) ,form)))
                   (t (error "Must not be reached.")))))
     (values form1 type)))
 
@@ -124,9 +125,32 @@
             (type (built-in-return-type operator argtypes)))
         (cond
           ((scalar-type-p type)
-           (values `(,operator1 ,@operands1) type))
+           (values `(the ,(compile-type type) (,operator1 ,@operands1)) type))
           ((vector-type-p type)
            (values `(,operator1 ,@operands1) type))
           ((array-type-p type)
-           (values `(,operator1 ,@operands1) type))
+           (values `(the ,(compile-type type) (,operator1 ,@operands1)) type))
           (t (error "Must not be reached.")))))))
+
+(defun compile-type (type)
+  (cl-pattern:match type
+    ('int 'fixnum)
+    ('float 'single-float)
+    ('double 'double-float)
+    ((:vector _ _) (error "Not implemented."))
+    ((:array type1)
+     (cl-pattern:match type1
+       ('int 'int-array)
+       ('float 'float-array)
+       ('double 'double-array)
+       ((:vector 'int 2) 'int2-array)
+       ((:vector 'int 3) 'int3-array)
+       ((:vector 'int 4) 'int4-array)
+       ((:vector 'float 2) 'float2-array)
+       ((:vector 'float 3) 'float3-array)
+       ((:vector 'float 4) 'float4-array)
+       ((:vector 'double 2) 'double2-array)
+       ((:vector 'double 3) 'double3-array)
+       ((:vector 'double 4) 'double4-array)
+       (_ (error "Must not be reached."))))
+    (_ (error "Must not be reached."))))

@@ -12,7 +12,6 @@
            :int :int2 :int3 :int4
            :float :float2 :float3 :float4
            :double :double2 :double3 :double4
-           :parse-type
            ;; type
            :mini-lang-type
            :mini-lang-type-p
@@ -30,6 +29,8 @@
            :type-variable-p
            ;; type wildcard
            :type-wildcard-p
+           ;; parse type
+           :parse-type
            ;; gentype
            :*gentype-counter*
            :gentype
