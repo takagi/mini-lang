@@ -20,13 +20,6 @@
      (declare (type fixnum ,var))
      ,@body))
 
-(defun zero (xs)
-  (declare (optimize (speed 3) (safety 0)))
-  (do-double3-array (i xs)
-    (setf (double3-aref* xs i)
-          (eval-mini-lang
-           (double3 0.0d0 0.0d0 0.0d0)))))
-
 (defun initialize (xs vs)
   (declare (optimize (speed 3) (safety 0)))
   ;; Initialize position.
@@ -34,9 +27,7 @@
     (let ((x (random 1.0d0))
           (y (random 1.0d0))
           (z (random 1.0d0)))
-      (setf (double3-aref* xs i)
-            (eval-mini-lang
-             (double3 x y z)))))
+      (setf (double3-aref* xs i) (values x y z))))
   ;; Initialize velocity.
   (do-double3-array (i vs)
     (setf (double3-aref* vs i)
