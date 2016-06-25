@@ -11,7 +11,7 @@
 (defsystem mini-lang
   :version "0.1"
   :author "Masayuki Takagi"
-  :license "LLGPL"
+  :license "MIT"
   :depends-on (:cl-tuples
                :cl-pattern
                :cl-unification)
@@ -33,11 +33,11 @@
                    (:file "compile")
                    (:file "free-variables")
                    (:file "lang")))
-                 (:file "mini-lang2"))))
-  :description ""
+                 (:file "mini-lang"))))
+  :description "Efficient and expressive vector math library with an embedded language on Common Lisp."
   :long-description
   #.(with-open-file (stream (merge-pathnames
-                             #p"README.markdown"
+                             #p"README.md"
                              (or *load-pathname* *compile-file-pathname*))
                             :if-does-not-exist nil
                             :direction :input)

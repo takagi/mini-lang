@@ -10,7 +10,7 @@
 
 (defsystem mini-lang-test
   :author "Masayuki Takagi"
-  :license "LLGPL"
+  :license "MIT"
   :depends-on (:mini-lang
                :cl-test-more)
   :components ((:module "t"

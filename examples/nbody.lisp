@@ -10,65 +10,79 @@
   (:export :main))
 (in-package :mini-lang-examples.nbody)
 
-(defvar *x*)
-(defvar *v*)
-(defvar *a*)
-(defvar *f*)
-(defvar dt  1d-2)
-(defvar m   1d0)
-(defvar g   9.8d0)
 
-(defun initialize-x (n)
-  (setf *x* (make-vec3-array n))
-  (for-vec3-array *x* i
-    (let* ((k (float i 1d0)))
-      (setf-vec3-array *x* i (vec3 k k k)))))
+(defvar dt 1.0d-1)
+(defvar m 1.0d0)
+(defvar G 6.67259d-11)
 
-(defun initialize-v (n)
-  (setf *v* (make-vec3-array n)))
+(defmacro do-double3-array ((var array) &body body)
+  `(dotimes (,var (double3-array-dimensions ,array))
+     (declare (type fixnum ,var))
+     ,@body))
 
-(defun initialize-a (n)
-  (setf *a* (make-vec3-array n)))
-
-(defun initialize-f (n)
-  (setf *f* (make-vec3-array n)))
-
-(defun initialize (n)
-  (initialize-x n)
-  (initialize-v n)
-  (initialize-a n)
-  (initialize-f n))
-
-(defun update-x ()
-  (for-vec3-array *x* i
-    (incf-vec3-array *x* i (* (vec3-aref *v* i) (scalar dt)))))
-
-(defun update-v ()
-  (for-vec3-array *v* i
-    (incf-vec3-array *v* i (* (vec3-aref *a* i) (scalar dt)))))
-
-(defun update-a ()
-  (for-vec3-array *a* i
-    (setf-vec3-array *a* i (/ (vec3-aref *f* i) (scalar m)))))
-
-(defun update-f ()  
+(defun initialize (xs vs)
   (declare (optimize (speed 3) (safety 0)))
-  (let ((n (vec3-array-size *x*)))
-    (for-vec3-array *f* i
-      (setf-vec3-array *f* i (0d0 0d0 0d0))
-      (dotimes (j n)
-        (if (/= i j)
-          (incf-vec3-array *f* i (let ((r (- (vec3-aref *x* j)
-                                             (vec3-aref *x* i))) ; vec3
-                                       (n (/ r (norm r)))) ; vec3
-                                   (* (/ (* (scalar m) (scalar m) (scalar g))
-                                         (* (norm r) (norm r)))
-                                      n))))))))
+  ;; Initialize position.
+  (do-double3-array (i xs)
+    (let ((x (random 1.0d0))
+          (y (random 1.0d0))
+          (z (random 1.0d0)))
+      (setf (double3-aref* xs i) (values x y z))))
+  ;; Initialize velocity.
+  (do-double3-array (i vs)
+    (setf (double3-aref* vs i)
+          (eval-mini-lang
+           (double3 0.0d0 0.0d0 0.0d0)))))
+
+(defun update-xs (xs vs)
+  (declare (optimize (speed 3) (safety 0)))
+  (do-double3-array (i xs)
+    (setf (double3-aref* xs i)
+          (eval-mini-lang
+           (+ (the double3 (aref xs i))
+              (*. (aref vs i) dt))))))
+
+(defun update-vs (vs as)
+  (declare (optimize (speed 3) (safety 0)))
+  (do-double3-array (i vs)
+    (setf (double3-aref* vs i)
+          (eval-mini-lang
+           (+ (the double3 (aref vs i))
+              (*. (aref as i) dt))))))
+
+(defun update-as (as fs)
+  (declare (optimize (speed 3) (safety 0)))
+  (do-double3-array (i as)
+    (setf (double3-aref* as i)
+          (eval-mini-lang
+           (/. (the double3 (aref fs i)) m)))))
+
+(defun update-fs (fs xs)
+  (declare (optimize (speed 3) (safety 0)))
+  (do-double3-array (i fs)
+    (setf (double3-aref* fs i)
+          (eval-mini-lang
+           (double3 0.0d0 0.0d0 0.0d0)))
+    (do-double3-array (j xs)
+      (when (/= i j)
+        (setf (double3-aref* fs i)
+              (eval-mini-lang
+               (+ (aref fs i)
+                  (let ((r (- (the double3 (aref xs j))
+                              (aref xs i))))
+                    (let ((|r| (norm r)))
+                      (.* (/ (* m m G)
+                             (* |r| |r|))
+                          (/. r |r|)))))))))))
 
 (defun main (n)
-  (initialize n)
-  (dotimes (_ 100)
-    (update-f)
-    (update-a)
-    (update-v)
-    (update-x)))
+  (let ((xs (make-double3-array n))
+        (vs (make-double3-array n))
+        (as (make-double3-array n))
+        (fs (make-double3-array n)))
+    (initialize xs vs)
+    (loop repeat 100
+       do (update-fs fs xs)
+          (update-as as fs)
+          (update-vs vs as)
+          (update-xs xs vs))))
