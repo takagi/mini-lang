@@ -26,51 +26,55 @@ Mini-lang provides the following data types.
 
 ### Syntax
 
-#### Literals
+Mini-lang provides the following syntax.
+
+**Literal**
 
 To be described.
 
-#### References
+**Reference**
 
 To be described.
 
-#### THE
+**THE form**
 
-To be described.
+    THE type form
 
-#### IF
+**IF form**
 
-To be described.
+    IF test-form then-form else-form
 
-#### LET
+**LET form**
 
-To be described.
+    LET
 
-#### Function application
+**Function application**
 
 To be described.
 
 ### Built-in functions
 
-- Arithmetic functions
+Mini-lang provides the following built-in functions.
+
+**Arithmetic functions**
 
     + - * / *. .* /.
 
-- Mathematical functions
+**Mathematical functions**
 
     norm
 
-- Vector constructor
+**Vector constructor**
 
     int2 int3 int4 float2 float3 float4 double2 double3 double4 
 
-- Vector accessor
+**Vector accessors**
 
     int2-{x,y} int3-{x,y,z} int4-{x,y,z,w}
     float2-{x,y} float3-{x,y,z} float4-{x,y,z,w}
     double2-{x,y} double3-{x,y,z} double4-{x,y,z,w}
 
-- Array accessor
+**Array accessor**
 
     aref
 
@@ -166,16 +170,31 @@ Here shows the grammer of type scheme representation internally used.
 
 ## API
 
-### [Macro] EVAL-MINI-LANG
+### [Macro] eval-mini-lang
 
-### [Function] COMPILE-MINI-LANG
+    EVAL-MINI-LANG
 
-### [Function] MAKE-INT{,2,3,4}-ARRAY, MAKE-FLOAT{,2,3,4}-ARRAY, MAKE-DOUBLE{,2,3,4}-ARRAY
+### [Function] compile-mini-lang
 
-### [Accessor] INT{,2,3,4}-AREF*, FLOAT{,2,3,4}-AREF*, DOUBLE{,2,3,4}-AREF*
+    COMPILE-MINI-LANG
 
-### [Function] INT{,2,3,4}-ARRAY-DIMENSIONS, FLOAT{,2,3,4}-ARRAY-DIMENSIONS, DOUBLE{,2,3,4}-ARRAY-DIMENSIONS
+### [Function] make-int{,2,3,4}-array, make-float{,2,3,4}-array, make-double{,2,3,4}-array
 
+    MAKE-INT{,2,3,4}-ARRAY
+    MAKE-FLOAT{,2,3,4}-ARRAY
+    MAKE-DOUBLE{,2,3,4}-ARRAY
+
+### [Accessor] int{,2,3,4}-aref\*, float{,2,3,4}-aref\*, double{,2,3,4}-aref\*
+
+    INT{,2,3,4}-AREF*
+    FLOAT{,2,3,4}-AREF*
+    DOUBLE{,2,3,4}-AREF*
+
+### [Function] int{,2,3,4}-array-dimensions, float{,2,3,4}-array-dimensions, double{,2,3,4}-array-dimensions
+
+    INT{,2,3,4}-ARRAY-DIMENSIONS
+    FLOAT{,2,3,4}-ARRAY-DIMENSIONS
+    DOUBLE{,2,3,4}-ARRAY-DIMENSIONS
 
 ## Author
 
