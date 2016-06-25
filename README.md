@@ -124,7 +124,7 @@ Here shows the grammar of embedded language syntax.
 
     name := symbol
 
-#### Internal type grammar
+#### (Internal) Type grammar
 
 Here shows the grammar of type representation internally used.
 
@@ -146,7 +146,7 @@ Here shows the grammar of type representation internally used.
 
     type variable := ?T0 | ?T1 | ...
 
-#### Internal type scheme
+#### (Internal) Type scheme grammar
 
 Here shows the grammer of type scheme representation internally used.
 
