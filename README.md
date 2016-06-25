@@ -2,6 +2,10 @@
 
 Efficient and expressive vector math library with an embedded language on Common Lisp.
 
+## Example
+
+To be described.
+
 ## Embedded language
 
 ### Data and Types
