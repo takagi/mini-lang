@@ -9,20 +9,35 @@
 (in-package :mini-lang-asd)
 
 (defsystem mini-lang
-  :version "0.1-SNAPSHOT"
+  :version "0.1"
   :author "Masayuki Takagi"
-  :license "LLGPL"
-  :depends-on (:cl-pattern
-               :cl-tuples-wrapper
-               :anaphora
-               :alexandria)
+  :license "MIT"
+  :depends-on (:cl-tuples
+               :cl-pattern
+               :cl-unification)
   :components ((:module "src"
+                :serial t
                 :components
-                ((:file "mini-lang"))))
-  :description ""
+                ((:module "lang"
+                  :serial t
+                  :components
+                  ((:file "data")
+                   (:file "symbol")
+                   (:file "type")
+                   (:file "built-in")
+                   (:file "syntax")
+                   (:file "unification-environment")
+                   (:file "type-environment")
+                   (:file "variable-environment")
+                   (:file "infer")
+                   (:file "compile")
+                   (:file "free-variables")
+                   (:file "lang")))
+                 (:file "mini-lang"))))
+  :description "Efficient and expressive vector math library with an embedded language on Common Lisp."
   :long-description
   #.(with-open-file (stream (merge-pathnames
-                             #p"README.markdown"
+                             #p"README.md"
                              (or *load-pathname* *compile-file-pathname*))
                             :if-does-not-exist nil
                             :direction :input)

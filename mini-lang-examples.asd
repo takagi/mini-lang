@@ -10,7 +10,7 @@
 
 (defsystem mini-lang-examples
   :author "Masayuki Takagi"
-  :license "LLGPL"
+  :license "MIT"
   :depends-on (:mini-lang :imago)
   :components ((:module "examples"
                 :components
